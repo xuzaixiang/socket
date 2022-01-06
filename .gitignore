@@ -1,3 +1,6 @@
+source/config/config.h
+.idea
+cmake-build-debug
 bazel-bin
 bazel-out
 bazel-event
