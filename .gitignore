@@ -1,3 +1,9 @@
+bazel-bin
+bazel-out
+bazel-event
+bazel-testlogs
+.clwb/.idea
+.clwb/.blaze
 # Prerequisites
 *.d
 
