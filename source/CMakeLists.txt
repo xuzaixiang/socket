@@ -4,7 +4,11 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 add_subdirectory(config)
-add_library(event test.c)
+add_library(event
+        test.c
+        event.c
+        epoll.c
+        )
 
 #target_link_libraries(event)
 target_include_directories(event PUBLIC config)
