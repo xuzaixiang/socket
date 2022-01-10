@@ -2,7 +2,6 @@
 #define EVENT_PLATFORM_H
 
 #include "configi.h"
-#include "shf_platform.h"
 
 #ifdef SNF_OS_WIN
 #ifndef WIN32_LEAN_AND_MEAN
