@@ -4,7 +4,7 @@
 #ifndef EVENT_IO_WATCHER_H
 #define EVENT_IO_WATCHER_H
 
-#include "eloop.h"
+#include "event/eloop.h"
 #include "eplatform.h"
 
 int iowatcher_init(eloop_t* loop);

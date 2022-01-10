@@ -4,11 +4,17 @@
 
 #include <event/ealloc.h>
 #include <event/eatomic.h>
+#include <event/eloop.h>
 
 int main() {
 #ifdef EVENT_ALLOC_COUNT
-  E_MEMCHECK;
-  printf("--------");
+    E_MEMCHECK;
+    printf("--------");
 #endif
-  return 0;
+
+    eloop_t *loop = eloop_new(0);
+
+
+
+    return 0;
 }

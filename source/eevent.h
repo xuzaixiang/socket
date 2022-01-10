@@ -5,7 +5,7 @@
 #ifndef EVENT_EVENT_H
 #define EVENT_EVENT_H
 
-#include "eloop.h"
+#include "event/eloop.h"
 
 struct eloop_s {
   uint32_t flags;
@@ -17,15 +17,15 @@ struct eloop_s {
   uint64_t loop_cnt;
   long pid;
   long tid;
-  void *userdata;
+//  void *userdata;
 
 //private:
   // events
-  uint32_t                    intern_nevents;
-  uint32_t                    nactives;
-  uint32_t                    npendings;
+//  uint32_t                    intern_nevents;
+//  uint32_t                    nactives;
+//  uint32_t                    npendings;
   // pendings: with priority as array.index
-  eevent_t*                   pendings[EEVENT_PRIORITY_SIZE];
+//  eevent_t*                   pendings[EEVENT_PRIORITY_SIZE];
   // idles
 //  struct list_head            idles;
 //  uint32_t                    nidles;

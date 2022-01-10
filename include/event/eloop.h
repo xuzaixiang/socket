@@ -3,6 +3,8 @@
 
 #include "stdint.h"//C99
 
+#include "eexport.h"
+
 #define EEVENT_LOWEST_PRIORITY    (-5)
 #define EEVENT_HIGHEST_PRIORITY     5
 #define EEVENT_PRIORITY_SIZE  (EEVENT_HIGHEST_PRIORITY-EEVENT_LOWEST_PRIORITY+1)
@@ -62,5 +64,10 @@ typedef enum {
 struct eevent_s {
   EVENT_FIELDS
 };
+
+#define ELOOP_FLAG_RUN_ONCE                     0x00000001
+#define ELOOP_FLAG_AUTO_FREE                    0x00000002
+#define ELOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
+eloop_t* eloop_new(int flags DEFAULT(ELOOP_FLAG_AUTO_FREE));
 
 #endif //EVENT_ELOOP_H

@@ -1,4 +1,10 @@
 
-#include "eloop.h"
+#include "event/eloop.h"
+#include "event/ealloc.h"
+#include "eevent.h"
 
-//hloop_t* hloop_new(int flags DEFAULT(HLOOP_FLAG_AUTO_FREE));
+eloop_t *eloop_new(int flags DEFAULT(ELOOP_FLAG_AUTO_FREE)) {
+  eloop_t *loop;
+  E_ALLOC_SIZEOF(loop);
+  return loop;
+}

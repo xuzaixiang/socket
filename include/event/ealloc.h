@@ -31,7 +31,7 @@ void e_memcheck();
 
 #define E_ALLOC(ptr, size)\
     do {\
-        *(void**)&(ptr) = cus_safe_zalloc(size);\
+        *(void**)&(ptr) = e_zalloc_safe(size);\
         printd("alloc(%p, size=%llu)\tat [%s:%d:%s]\n", ptr, (unsigned long long)size, __FILE__, __LINE__, __FUNCTION__);\
     } while(0)
 
