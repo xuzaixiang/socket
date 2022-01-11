@@ -3,10 +3,10 @@
 //
 
 #include <string.h>
-#include "event/ealloc.h"
+#include "event/e_alloc.h"
 
 #ifdef EVENT_ALLOC_COUNT
-#include "event/eatomic.h"
+#include "event/e_atomic.h"
 static e_atomic_t s_alloc_count = E_ATOMIC_VAR_INIT(0);
 static e_atomic_t s_free_count = E_ATOMIC_VAR_INIT(0);
 long e_alloc_count() {

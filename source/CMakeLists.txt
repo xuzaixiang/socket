@@ -12,10 +12,8 @@ option(OPTION_EVENT_ALLOC_PRINT   "whether pint alloc info or not !"    ON)
 with_option(OPTION_EVENT_ALLOC_COUNT)
 with_option(OPTION_EVENT_ALLOC_PRINT)
 
-
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-
 #if ()
 #
 #endif ()
@@ -27,11 +25,12 @@ add_definitions(-DEVENT_ALLOC_PRINT)
 
 add_subdirectory(../third_party/cus/source cus)
 add_library(event
-        test.c
-        eevent.c
+        e_event.c
         epoll.c
-        eloop.c
-        ealloc.c
+        e_loop.c
+        e_alloc.c
+        io/e_io.c
+        io/e_socket.c
         )
 
 target_include_directories(event PUBLIC ../include)
