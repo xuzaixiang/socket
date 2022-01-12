@@ -1,4 +1,5 @@
 source/config/config.h
+include/event/e_config.h
 .idea
 cmake-build-debug
 bazel-bin

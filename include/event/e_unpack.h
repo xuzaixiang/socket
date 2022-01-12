@@ -1,6 +1,8 @@
 #ifndef EVENT_UNPACK_H
 #define EVENT_UNPACK_H
 
+#include "endian.h"
+
 //-----------------unpack---------------------------------------------
 typedef enum {
   UNPACK_BY_FIXED_LENGTH  = 1,    // Not recommended
@@ -66,5 +68,11 @@ typedef struct unpack_setting_s {
     }
 #endif
 } unpack_setting_t;
+
+typedef struct e_io_s e_io_t;
+int e_io_unpack(e_io_t* io, void* buf, int readbytes);
+int e_io_unpack_by_fixed_length(e_io_t* io, void* buf, int readbytes);
+int e_io_unpack_by_delimiter(e_io_t* io, void* buf, int readbytes);
+int e_io_unpack_by_length_field(e_io_t* io, void* buf, int readbytes);
 
 #endif

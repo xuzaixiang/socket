@@ -11,6 +11,7 @@
 #include "e_queue.h"
 #include "e_buf.h"
 #include "e_heap.h"
+#include "e_loop_timer.h"
 
 // loop
 #define EVENT_LOOP_FLAG_RUN_ONCE                     0x00000001

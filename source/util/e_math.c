@@ -10,3 +10,31 @@ unsigned long ceil2e(unsigned long num){
   while (e--) ret<<=1;
   return ret;
 }
+
+
+// @param[IN|OUT] len: in=>buflen, out=>varint bytesize
+long long varint_decode(const unsigned char* buf, int* len) {
+  long long ret = 0;
+  int bytes = 0, bits = 0;
+  const unsigned char *p = buf;
+  do {
+    if (len && *len && bytes == *len) {
+      // Not enough length
+      *len = 0;
+      return 0;
+    }
+    ret |= ((long long)(*p & 0x7F)) << bits;
+    ++bytes;
+    if ((*p & 0x80) == 0) {
+      // Found end
+      if (len) *len = bytes;
+      return ret;
+    }
+    ++p;
+    bits += 7;
+  } while(bytes < 10);
+
+  // Not found end
+  if (len) *len = -1;
+  return ret;
+}

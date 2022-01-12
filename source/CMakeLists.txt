@@ -27,10 +27,13 @@ add_subdirectory(../third_party/cus/source cus)
 set(event_source
         e_event.c
         e_loop.c
+        e_loop_timer.c
         e_alloc.c
         e_io.c
         e_ssl.c
+        e_nio.c
         e_socket.c
+        e_unpack.c
         util/e_math.c
         util/e_time.c
         linux/e_epoll.c)

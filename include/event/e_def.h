@@ -11,6 +11,12 @@
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
+
+#ifndef LIMIT
+#define LIMIT(lower, v, upper) ((v) < (lower) ? (lower) : (v) > (upper) ? (upper) : (v))
+#endif
+
+
 #ifndef container_of
 #define container_of(ptr, type, member) \
 ((type*)((char*)(ptr) - offsetof(type, member)))

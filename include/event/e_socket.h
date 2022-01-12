@@ -41,7 +41,8 @@ void sockaddr_set_port(sockaddr_u *addr, int port);
 int sockaddr_set_ipport(sockaddr_u *addr, const char *host, int port);
 const char* sockaddr_str(sockaddr_u* addr, char* buf, int len);
 
+#define SOCKADDR_LEN(addr)      sockaddr_len((sockaddr_u*)addr)
 #define SOCKADDR_STR(addr, buf) sockaddr_str((sockaddr_u*)addr, buf, sizeof(buf))
-
+#define SOCKADDR_PRINT(addr)    sockaddr_print((sockaddr_u*)addr)
 
 #endif //EVENT_SOCKET_H

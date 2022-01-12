@@ -5,6 +5,7 @@
 
 #define EVENT_ALLOC_COUNT
 #include <event/e_alloc.h>
+#include "event/e_nio.h"
 
 
 static void on_close(e_io_t* io) {

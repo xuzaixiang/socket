@@ -44,9 +44,9 @@ typedef enum {
 #define e_event_cb(ev)           (((e_event_t*)(ev))->cb)
 
 typedef void (*e_event_cb)(e_event_t *ev);
-//typedef void (*hidle_cb)(hidle_t *idle);
-//typedef void (*htimer_cb)(htimer_t *timer);
-//typedef void (*hio_cb)(hio_t *io);
+//typedef void (*e_idle_cb)(e_idle_t *idle);
+typedef void (*e_timer_cb)(e_timer_t *timer);
+typedef void (*e_io_cb)(e_io_t *io);
 
 typedef void (*e_accept_cb)(e_io_t *io);
 typedef void (*e_connect_cb)(e_io_t *io);
