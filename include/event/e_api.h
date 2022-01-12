@@ -1,10 +1,17 @@
 #ifndef EVENT_H
 #define EVENT_H
 
+#include "e_def.h"
+#include "e_platform.h"
+
+int socket_errno();
+
+
 #ifdef EVENT_OS_WIN
-#include "win/event_win.h"
+#include "win/e_win.h"
 #else
-#include "posix/event_posix.h"
+#include <stddef.h>
+#include "posix/e_posix.h"
 #ifdef EVENT_OS_LINUX
 #include "linux/linux.h"
 #else

@@ -7,8 +7,8 @@
 
 #ifdef EVENT_ALLOC_COUNT
 #include "event/e_atomic.h"
-static e_atomic_t s_alloc_count = E_ATOMIC_VAR_INIT(0);
-static e_atomic_t s_free_count = E_ATOMIC_VAR_INIT(0);
+static e_atomic_t s_alloc_count = EVENT_ATOMIC_VAR_INIT(0);
+static e_atomic_t s_free_count = EVENT_ATOMIC_VAR_INIT(0);
 long e_alloc_count() {
   return s_alloc_count;
 }

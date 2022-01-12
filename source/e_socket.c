@@ -5,9 +5,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <event/e_alloc.h>
-#include "event/io/e_socket.h"
+#include "event/e_socket.h"
 
-int resolve_addr(const char* host, sockaddr_u* addr){
+int resolve_addr(const char *host, sockaddr_u *addr) {
 #ifdef OS_WIN
   WSAInit();
 #endif
@@ -34,7 +34,7 @@ int resolve_addr(const char* host, sockaddr_u* addr){
     memcpy(addr, ais->ai_addr, ais->ai_addrlen);
     freeaddrinfo(ais);
 #else
-  struct hostent* phe = gethostbyname(host);
+  struct hostent *phe = gethostbyname(host);
   if (phe == NULL) {
     printd("unknown host %s err:%d\n", host, h_errno);
     return -h_errno;
@@ -61,17 +61,50 @@ void sockaddr_set_port(sockaddr_u *addr, int port) {
     addr->sin6.sin6_port = htons(port);
   }
 }
-
+const char* sockaddr_str(sockaddr_u* addr, char* buf, int len){
+  char ip[SOCKADDR_STRLEN] = {0};
+  uint16_t port = 0;
+  if (addr->sa.sa_family == AF_INET) {
+    inet_ntop(AF_INET, &addr->sin.sin_addr, ip, len);
+    port = ntohs(addr->sin.sin_port);
+    snprintf(buf, len, "%s:%d", ip, port);
+  }
+  else if (addr->sa.sa_family == AF_INET6) {
+    inet_ntop(AF_INET6, &addr->sin6.sin6_addr, ip, len);
+    port = ntohs(addr->sin6.sin6_port);
+    snprintf(buf, len, "[%s]:%d", ip, port);
+  }
+#ifdef ENABLE_UDS
+  else if (addr->sa.sa_family == AF_UNIX) {
+        snprintf(buf, len, "%s", addr->sun.sun_path);
+    }
+#endif
+  return buf;
+}
 int sockaddr_set_ipport(sockaddr_u *addr, const char *host, int port) {
-//#ifdef ENABLE_UDS
-//  if (port < 0) {
-//        sockaddr_set_path(addr, host);
-//        return 0;
-//    }
-//#endif
+#ifdef ENABLE_UDS
+  if (port < 0) {
+        sockaddr_set_path(addr, host);
+        return 0;
+    }
+#endif
   int ret = sockaddr_set_ip(addr, host);
   if (ret != 0) return ret;
   sockaddr_set_port(addr, port);
   // SOCKADDR_PRINT(addr);
   return 0;
+}
+
+socklen_t sockaddr_len(sockaddr_u *addr) {
+  if (addr->sa.sa_family == AF_INET) {
+    return sizeof(struct sockaddr_in);
+  } else if (addr->sa.sa_family == AF_INET6) {
+    return sizeof(struct sockaddr_in6);
+  }
+#ifdef ENABLE_UDS
+  else if (addr->sa.sa_family == AF_UNIX) {
+        return sizeof(struct sockaddr_un);
+    }
+#endif
+  return sizeof(sockaddr_u);
 }

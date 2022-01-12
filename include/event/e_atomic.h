@@ -24,12 +24,12 @@ using std::atomic_long;
 #endif
 
 typedef atomic_flag e_atomic_flag_t;
-#define E_ATOMIC_FLAG_INIT           ATOMIC_FLAG_INIT
+#define EVENT_ATOMIC_VAR_INIT           ATOMIC_FLAG_INIT
 #define e_atomic_flag_test_and_set   ATOMIC_FLAG_TEST_AND_SET
 #define e_atomic_flag_clear          ATOMIC_FLAG_CLEAR
 
 typedef atomic_long e_atomic_t;
-#define E_ATOMIC_VAR_INIT            ATOMIC_VAR_INIT
+#define EVENT_ATOMIC_VAR_INIT            ATOMIC_VAR_INIT
 #define e_atomic_add                 ATOMIC_ADD
 #define e_atomic_sub                 ATOMIC_SUB
 #define e_atomic_inc                 ATOMIC_INC

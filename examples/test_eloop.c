@@ -8,7 +8,7 @@
 
 int main() {
 #ifdef EVENT_ALLOC_COUNT
-  E_MEMCHECK;
+  EVENT_MEMCHECK;
 #endif
   eloop_t *loop = e_loop_new(0);
   // test idle and priority

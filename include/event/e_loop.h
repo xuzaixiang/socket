@@ -5,77 +5,95 @@
 
 #include "e_export.h"
 #include "e_platform.h"
-#include "io/e_io.h"
+#include "e_io.h"
+#include "e_list.h"
+#include "e_array.h"
+#include "e_queue.h"
+#include "e_buf.h"
+#include "e_heap.h"
 
-#define E_LOWEST_PRIORITY    (-5)
-#define E_HIGHEST_PRIORITY     5
-#define E_PRIORITY_SIZE  (E_HIGHEST_PRIORITY-E_LOWEST_PRIORITY+1)
-#define E_LOW_PRIORITY       (-3)
-#define E_NORMAL_PRIORITY      0
-#define E_HIGH_PRIORITY        3
+// loop
+#define EVENT_LOOP_FLAG_RUN_ONCE                     0x00000001
+#define EVENT_LOOP_FLAG_AUTO_FREE                    0x00000002
+#define EVENT_LOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
+
+EVENT_ARRAY_DECL(e_io_t*, io_array)
+EVENT_QUEUE_DECL(e_event_t, e_queue)
 
 typedef struct e_loop_s e_loop_t;
 typedef struct e_event_s e_event_t;
-
+typedef struct e_idle_s e_idle_t;
 typedef struct e_io_s e_io_t;
 
 typedef void (*e_event_cb)(e_event_t *ev);
 typedef void (*e_accept_cb)(e_io_t *io);
 
 typedef enum {
-  ELOOP_STATUS_STOP,
-  ELOOP_STATUS_RUNNING,
-  ELOOP_STATUS_PAUSE
+  EVENT_LOOP_STATUS_STOP,
+  EVENT_LOOP_STATUS_RUNNING,
+  EVENT_LOOP_STATUS_PAUSE
 } e_loop_status_e;
 
+struct e_loop_s {
+  uint32_t flags;
+  e_loop_status_e status;
+  uint64_t start_ms;       // ms
+  uint64_t start_hrtime;   // us
+  uint64_t end_hrtime;
+  uint64_t cur_hrtime;
+  uint64_t loop_cnt;
+  long pid;
+  long tid;
+//  void *userdata;
 
-typedef enum {
-  EVENT_TYPE_NONE = 0,
-  EVENT_TYPE_IO = 0x00000001,
-  EVENT_TYPE_TIMEOUT = 0x00000010,
-  EVENT_TYPE_PERIOD = 0x00000020,
-  EVENT_TYPE_TIMER = EVENT_TYPE_TIMEOUT | EVENT_TYPE_PERIOD,
-  EVENT_TYPE_IDLE = 0x00000100,
-  EVENT_TYPE_CUSTOM = 0x00000400, // 1024
-} e_event_type_e;
-
-#define e_event_set_id(ev, id)           ((e_event_t*)(ev))->event_id = id
-#define e_event_set_cb(ev, cb)           ((e_event_t*)(ev))->cb = cb
-#define e_event_set_priority(ev, prio)   ((e_event_t*)(ev))->priority = prio
-#define e_event_set_userdata(ev, udata)  ((e_event_t*)(ev))->userdata = (void*)udata
-
-#define e_event_loop(ev)         (((e_event_t*)(ev))->loop)
-#define e_event_type(ev)         (((e_event_t*)(ev))->event_type)
-#define e_event_id(ev)           (((e_event_t*)(ev))->event_id)
-#define e_event_cb(ev)           (((e_event_t*)(ev))->cb)
-#define e_event_priority(ev)     (((e_event_t*)(ev))->priority)
-#define e_event_userdata(ev)     (((e_event_t*)(ev))->userdata)
-
-#define EVENT_FLAGS        \
-    unsigned    destroy :1; \
-    unsigned    active  :1; \
-    unsigned    pending :1;
-
-#define EVENT_FIELDS                   \
-    e_loop_t*            loop;           \
-    e_event_type_e        event_type;     \
-    uint64_t            event_id;       \
-    e_event_cb            cb;             \
-    void*               userdata;       \
-    void*               privdata;       \
-    struct e_event_s*     pending_next;   \
-    int                 priority;       \
-    EVENT_FLAGS
-
-struct e_event_s {
-  EVENT_FIELDS
+//private:
+  // events
+  uint32_t intern_nevents;
+  uint32_t nactives;
+  uint32_t npendings;
+  // pendings: with priority as array.index
+  e_event_t *pendings[EVENT_PRIORITY_SIZE];
+  // idles
+  struct list_head idles;
+  uint32_t nidles;
+  // timers
+  struct heap timers;
+  uint32_t ntimers;
+  // ios: with fd as array.index
+  struct io_array ios;
+  uint32_t nios;
+  // one loop per thread, so one readbuf per loop is OK.
+  e_buf_t readbuf;
+  void *iowatcher;
+//  // custom_events
+  int sockpair[2];
+  e_queue custom_events;
+  e_mutex_t custom_events_mutex;
 };
+typedef struct e_loop_s e_loop_t;
 
 #define ELOOP_FLAG_RUN_ONCE                     0x00000001
 #define ELOOP_FLAG_AUTO_FREE                    0x00000002
 #define ELOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
-e_loop_t *e_loop_new(int flags DEFAULT(ELOOP_FLAG_AUTO_FREE));
 
+
+static void __e_timer_del(e_timer_t* timer);
+static void __e_idle_del(e_idle_t* idle);
+
+e_loop_t *e_loop_new(int flags DEFAULT(ELOOP_FLAG_AUTO_FREE));
+void e_loop_free(e_loop_t **pp);
+int e_loop_run(e_loop_t *loop);
+
+void e_loop_post_event(e_loop_t *loop, e_event_t *ev);
+
+uint64_t e_loop_now(e_loop_t *loop);          // s
+uint64_t e_loop_now_ms(e_loop_t *loop);       // ms
+uint64_t e_loop_now_hrtime(e_loop_t *loop);   // us
+void e_loop_update_time(e_loop_t *loop);
+
+e_io_t *e_read(e_loop_t *loop, int fd, void *buf, size_t len, e_read_cb read_cb);
+e_io_t *e_write(e_loop_t *loop, int fd, const void *buf, size_t len, e_write_cb write_cb DEFAULT(NULL));
+void e_close(e_loop_t *loop, int fd);
 
 e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);
 

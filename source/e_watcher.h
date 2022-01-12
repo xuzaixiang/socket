@@ -5,7 +5,6 @@
 #define EVENT_IO_WATCHER_H
 
 #include "event/e_loop.h"
-#include "eplatform.h"
 
 int iowatcher_init(e_loop_t* loop);
 int iowatcher_cleanup(e_loop_t* loop);

@@ -23,4 +23,4 @@ check_function("pthread_spin_lock" "pthread.h")
 check_function("pthread_mutex_timedlock" "pthread.h")
 check_function("sem_timedwait" "semaphore.h")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.tpl ${CMAKE_SOURCE_DIR}/source/econfig.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.tpl ${CMAKE_SOURCE_DIR}/include/event/e_config.h)
