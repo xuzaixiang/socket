@@ -65,7 +65,7 @@ struct e_loop_s {
   // one loop per thread, so one readbuf per loop is OK.
   e_buf_t readbuf;
   void *iowatcher;
-//  // custom_events
+  // custom_events
   int sockpair[2];
   e_queue custom_events;
   e_mutex_t custom_events_mutex;

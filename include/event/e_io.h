@@ -149,16 +149,14 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 e_io_t *e_io_get(e_loop_t *loop, int fd);
 
 
-// @hio_create_socket: socket -> bind -> listen
-// sockaddr_set_ipport -> socket -> hio_get(loop, sockfd) ->
+// @e_io_create_socket: socket -> bind -> listen
+// sockaddr_set_ipport -> socket -> e_io_get(loop, sockfd) ->
 // side == HIO_SERVER_SIDE ? bind ->
 // type & HIO_TYPE_SOCK_STREAM ? listen ->
 e_io_t *e_io_create_socket(e_loop_t *loop, const char *host, int port,
                            e_io_type_e type DEFAULT(EVENT_IO_TYPE_TCP),
                            e_io_side_e side DEFAULT(EVENT_IO_SERVER_SIDE));
 
-void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
-void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 
 // set callbacks
 void e_io_setcb_close(e_io_t *io, e_close_cb close_cb);
@@ -204,6 +202,8 @@ int e_io_revents(e_io_t *io);
 e_io_type_e e_io_type(e_io_t *io);
 struct sockaddr *e_io_localaddr(e_io_t *io);
 struct sockaddr *e_io_peeraddr(e_io_t *io);
+void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
+void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 void e_io_set_context(e_io_t *io, void *ctx);
 void *e_io_context(e_io_t *io);
 bool e_io_is_opened(e_io_t *io);
