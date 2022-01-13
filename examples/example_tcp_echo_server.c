@@ -3,7 +3,7 @@
 #include "event/e_loop.h"
 #include "event/e_io.h"
 
-#define EVENT_ALLOC_COUNT
+//#define EVENT_ALLOC_COUNT
 #include <event/e_alloc.h>
 #include "event/e_nio.h"
 

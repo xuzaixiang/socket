@@ -2,6 +2,7 @@
 #include "event/e_event.h"
 #include "event/e_loop.h"
 #include "event/e_alloc.h"
+#include "event/e_nio.h"
 #include "util/e_time.h"
 #include "e_watcher.h"
 
@@ -9,8 +10,8 @@
 #define EVENT_LOOP_MAX_BLOCK_TIME    100     // ms
 #define EVENT_LOOP_STAT_TIMEOUT      60000   // ms
 
-#define SOCKPAIR_READ_INDEX     0
-#define SOCKPAIR_WRITE_INDEX    1
+#define IO_ARRAY_INIT_SIZE              1024
+#define CUSTOM_EVENT_QUEUE_INIT_SIZE    16
 
 static void e_loop_destroy_sockpair(e_loop_t *loop) {
   SAFE_CLOSESOCKET(loop->sockpair[SOCKPAIR_READ_INDEX]);
@@ -47,13 +48,13 @@ static void e_loop_cleanup(e_loop_t *loop) {
 
   // timers
   printd("cleanup timers...\n");
-//  htimer_t* timer;
-//  while (loop->timers.root) {
-//    timer = TIMER_ENTRY(loop->timers.root);
-//    heap_dequeue(&loop->timers);
-//    HV_FREE(timer);
-//  }
-//  heap_init(&loop->timers, NULL);
+  e_timer_t *timer;
+  while (loop->timers.root) {
+    timer = TIMER_ENTRY(loop->timers.root);
+    heap_dequeue(&loop->timers);
+    EVENT_FREE(timer);
+  }
+  heap_init(&loop->timers, NULL);
 
   // readbuf
   if (loop->readbuf.base && loop->readbuf.len) {
@@ -73,6 +74,10 @@ static void e_loop_cleanup(e_loop_t *loop) {
   e_mutex_destroy(&loop->custom_events_mutex);
 }
 
+static int timers_compare(const struct heap_node *lhs, const struct heap_node *rhs) {
+  return TIMER_ENTRY(lhs)->next_timeout < TIMER_ENTRY(rhs)->next_timeout;
+}
+
 static void eloop_init(e_loop_t *loop) {
 #ifdef EVENT_OS_WIN
   WSAInit();
@@ -87,31 +92,31 @@ static void eloop_init(e_loop_t *loop) {
 
   // idles
   list_init(&loop->idles);
-//
-//  // timers
-//  heap_init(&loop->timers, timers_compare);
-//
-//  // ios
-//  io_array_init(&loop->ios, IO_ARRAY_INIT_SIZE);
-//
-//  // readbuf
-//  loop->readbuf.len = HLOOP_READ_BUFSIZE;
-//  HV_ALLOC(loop->readbuf.base, loop->readbuf.len);
-//
-//  // iowatcher
-//  iowatcher_init(loop);
-//
-//  // custom_events
-//  hmutex_init(&loop->custom_events_mutex);
-//  event_queue_init(&loop->custom_events, CUSTOM_EVENT_QUEUE_INIT_SIZE);
+
+  // timers
+  heap_init(&loop->timers, timers_compare);
+
+  // ios
+  io_array_init(&loop->ios, IO_ARRAY_INIT_SIZE);
+
+  // readbuf
+  loop->readbuf.len = EVENT_LOOP_READ_BUFSIZE;
+  EVENT_ALLOC(loop->readbuf.base, loop->readbuf.len);
+
+  // iowatcher
+  iowatcher_init(loop);
+
+  // custom_events
+  e_mutex_init(&loop->custom_events_mutex);
+  e_queue_init(&loop->custom_events, CUSTOM_EVENT_QUEUE_INIT_SIZE);
 
 
   // NOTE: hloop_create_sockpair when hloop_post_event or hloop_run
-//  loop->sockpair[0] = loop->sockpair[1] = -1;
+  loop->sockpair[0] = loop->sockpair[1] = -1;
 
   // NOTE: init start_time here, because htimer_add use it.
-//  loop->start_ms = gettimeofday_ms();
-//  loop->start_hrtime = loop->cur_hrtime = gethrtime_us();
+  loop->start_ms = gettimeofday_ms();
+  loop->start_hrtime = loop->cur_hrtime = gethrtime_us();
 }
 
 static void sockpair_read_cb(e_io_t *io, void *buf, int readbytes) {
@@ -140,7 +145,7 @@ static void sockpair_read_cb(e_io_t *io, void *buf, int readbytes) {
   e_mutex_unlock(&loop->custom_events_mutex);
 }
 
-static int e_loop_create_sockpair(e_loop_t *loop) {
+int e_loop_create_sockpair(e_loop_t *loop) {
 #if defined(EVENT_OS_LINUX)
   if (pipe(loop->sockpair) != 0) {
 //        hloge("pipe create failed!");
@@ -175,38 +180,6 @@ e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_a
   e_io_setcb_accept(io, accept_cb);
   e_io_accept(io);
   return io;
-}
-
-void e_loop_post_event(e_loop_t *loop, e_event_t *ev) {
-  if (ev->loop == NULL) {
-    ev->loop = loop;
-  }
-  if (ev->event_type == 0) {
-    ev->event_type = EVENT_TYPE_CUSTOM;
-  }
-  if (ev->event_id == 0) {
-    ev->event_id = e_loop_next_event_id();
-  }
-
-  int nsend = 0;
-  e_mutex_lock(&loop->custom_events_mutex);
-  if (loop->sockpair[SOCKPAIR_WRITE_INDEX] == -1) {
-    if (e_loop_create_sockpair(loop) != 0) {
-      goto unlock;
-    }
-  }
-#if defined(EVENT_OS_LINUX)
-  nsend = write(loop->sockpair[SOCKPAIR_WRITE_INDEX], "e", 1);
-#else
-  nsend =  send(loop->sockpair[SOCKPAIR_WRITE_INDEX], "e", 1, 0);
-#endif
-  if (nsend != 1) {
-//    hloge("send failed!");
-    goto unlock;
-  }
-  e_queue_push_back(&loop->custom_events, ev);
-  unlock:
-  e_mutex_unlock(&loop->custom_events_mutex);
 }
 
 e_io_t *e_read(e_loop_t *loop, int fd, void *buf, size_t len, e_read_cb read_cb) {
@@ -244,16 +217,16 @@ static int e_loop_process_ios(e_loop_t *loop, int timeout) {
   }
   return nevents < 0 ? 0 : nevents;
 }
-static void __e_timer_del(e_timer_t* timer){
+static void __e_timer_del(e_timer_t *timer) {
   if (timer->destroy) return;
   heap_remove(&timer->loop->timers, &timer->node);
   timer->loop->ntimers--;
   timer->destroy = 1;
 }
 
-static int e_loop_process_timers(e_loop_t* loop) {
+static int e_loop_process_timers(e_loop_t *loop) {
   int ntimers = 0;
-  e_timer_t* timer = NULL;
+  e_timer_t *timer = NULL;
   uint64_t now_hrtime = e_loop_now_hrtime(loop);
   while (loop->timers.root) {
     // NOTE: root of minheap has min timeout.
@@ -268,19 +241,17 @@ static int e_loop_process_timers(e_loop_t* loop) {
       // NOTE: Just mark it as destroy and remove from heap.
       // Real deletion occurs after hloop_process_pendings.
       __e_timer_del(timer);
-    }
-    else {
+    } else {
       // NOTE: calc next timeout, then re-insert heap.
       heap_dequeue(&loop->timers);
       if (timer->event_type == EVENT_TYPE_TIMEOUT) {
         while (timer->next_timeout <= now_hrtime) {
-          timer->next_timeout += (uint64_t)((e_timeout_t*)timer)->timeout * 1000;
+          timer->next_timeout += (uint64_t) ((e_timeout_t *) timer)->timeout * 1000;
         }
-      }
-      else if (timer->event_type == EVENT_TYPE_PERIOD) {
-        e_period_t* period = (e_period_t*)timer;
-        timer->next_timeout = (uint64_t)cron_next_timeout(period->minute, period->hour, period->day,
-                                                          period->week, period->month) * 1000000;
+      } else if (timer->event_type == EVENT_TYPE_PERIOD) {
+        e_period_t *period = (e_period_t *) timer;
+        timer->next_timeout = (uint64_t) cron_next_timeout(period->minute, period->hour, period->day,
+                                                           period->week, period->month) * 1000000;
       }
       heap_insert(&loop->timers, &timer->node);
     }
@@ -289,16 +260,16 @@ static int e_loop_process_timers(e_loop_t* loop) {
   }
   return ntimers;
 }
-static void __e_idle_del(e_idle_t* idle){
+static void __e_idle_del(e_idle_t *idle) {
   if (idle->destroy) return;
   idle->destroy = 1;
   list_del(&idle->node);
   idle->loop->nidles--;
 }
-static int e_loop_process_idles(e_loop_t* loop) {
+static int e_loop_process_idles(e_loop_t *loop) {
   int nidles = 0;
-  struct list_node* node = loop->idles.next;
-  e_idle_t* idle = NULL;
+  struct list_node *node = loop->idles.next;
+  e_idle_t *idle = NULL;
   while (node != &loop->idles) {
     idle = IDLE_ENTRY(node);
     node = node->next;
@@ -316,14 +287,14 @@ static int e_loop_process_idles(e_loop_t* loop) {
   return nidles;
 }
 
-static int e_loop_process_pendings(e_loop_t* loop) {
+static int e_loop_process_pendings(e_loop_t *loop) {
   if (loop->npendings == 0) return 0;
 
-  e_event_t* cur = NULL;
-  e_event_t* next = NULL;
+  e_event_t *cur = NULL;
+  e_event_t *next = NULL;
   int ncbs = 0;
   // NOTE: invoke event callback from high to low sorted by priority.
-  for (int i = EVENT_PRIORITY_SIZE-1; i >= 0; --i) {
+  for (int i = EVENT_PRIORITY_SIZE - 1; i >= 0; --i) {
     cur = loop->pendings[i];
     while (cur) {
       next = cur->pending_next;
@@ -356,7 +327,8 @@ static int e_loop_process_events(e_loop_t *loop) {
     e_loop_update_time(loop);
     uint64_t next_min_timeout = TIMER_ENTRY(loop->timers.root)->next_timeout;
     int64_t blocktime_us = next_min_timeout - e_loop_now_hrtime(loop);
-    if (blocktime_us <= 0) goto process_timers;
+    if (blocktime_us <= 0)
+      goto process_timers;
     blocktime = blocktime_us / 1000;
     ++blocktime;
     blocktime = MIN(blocktime, EVENT_LOOP_MAX_BLOCK_TIME);
@@ -432,10 +404,10 @@ int e_loop_run(e_loop_t *loop) {
   loop->status = EVENT_LOOP_STATUS_STOP;
   loop->end_hrtime = gethrtime_us();
 
-//  if (loop->flags & EVENT_LOOP_FLAG_AUTO_FREE) {
-//    e_loop_cleanup(loop);
-//    EVENT_FREE(loop);
-//  }
+  if (loop->flags & EVENT_LOOP_FLAG_AUTO_FREE) {
+    e_loop_cleanup(loop);
+    EVENT_FREE(loop);
+  }
   return 0;
 }
 

@@ -22,17 +22,26 @@ static inline void list_init(struct list_head *list) {
   list->next = list;
   list->prev = list;
 }
-static inline void __list_del(struct list_head * prev, struct list_head * next)
-{
+static inline void __list_del(struct list_head *prev, struct list_head *next) {
   next->prev = prev;
   prev->next = next;
 }
-static inline void list_del(struct list_head *entry)
-{
+static inline void list_del(struct list_head *entry) {
   __list_del(entry->prev, entry->next);
   //entry->next = NULL;
   //entry->prev = NULL;
 }
 
+static inline void __list_add(struct list_head *n,
+                              struct list_head *prev,
+                              struct list_head *next) {
+  next->prev = n;
+  n->next = next;
+  n->prev = prev;
+  prev->next = n;
+}
+static inline void list_add(struct list_head *n, struct list_head *head) {
+  __list_add(n, head, head->next);
+}
 
 #endif //EVENT_LIST_H

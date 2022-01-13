@@ -28,9 +28,9 @@ typedef union {
   struct sockaddr sa;
   struct sockaddr_in sin;
   struct sockaddr_in6 sin6;
-//#ifdef ENABLE_UDS
-//  struct sockaddr_un  sun;
-//#endif
+#ifdef ENABLE_UDS
+  struct sockaddr_un  sun;
+#endif
 } sockaddr_u;
 
 int resolve_addr(const char* host, sockaddr_u* addr);

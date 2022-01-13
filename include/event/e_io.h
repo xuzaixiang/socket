@@ -22,7 +22,7 @@
 #define EVENT_IO_DEFAULT_HEARTBEAT_INTERVAL  10000   // ms
 
 typedef void (*e_io_cb)(e_io_t *io);
-typedef void (*e_io_send_heartbeat_fn)(e_io_t* io);
+typedef void (*e_io_send_heartbeat_fn)(e_io_t *io);
 
 EVENT_QUEUE_DECL(offset_buf_t, write_queue);
 
@@ -90,7 +90,7 @@ struct e_io_s {
     unsigned char read_until_delim;
   };
   uint32_t small_readbytes_cnt; // for readbuf autosize
-//  // write
+  // write
   struct write_queue write_queue;
   e_recursive_mutex_t write_mutex; // lock write and write_queue
   uint32_t write_bufsize;
@@ -100,74 +100,54 @@ struct e_io_s {
   e_close_cb close_cb;
   e_accept_cb accept_cb;
   e_connect_cb connect_cb;
-//  // timers
-  int         connect_timeout;    // ms
-  int         close_timeout;      // ms
-  int         read_timeout;       // ms
-  int         write_timeout;      // ms
-  int         keepalive_timeout;  // ms
-  int         heartbeat_interval; // ms
+  // timers
+  int connect_timeout;    // ms
+  int close_timeout;      // ms
+  int read_timeout;       // ms
+  int write_timeout;      // ms
+  int keepalive_timeout;  // ms
+  int heartbeat_interval; // ms
   e_io_send_heartbeat_fn heartbeat_fn;
-  e_timer_t*   connect_timer;
-  e_timer_t*   close_timer;
-  e_timer_t*   read_timer;
-  e_timer_t*   write_timer;
-  e_timer_t*   keepalive_timer;
-  e_timer_t*   heartbeat_timer;
+  e_timer_t *connect_timer;
+  e_timer_t *close_timer;
+  e_timer_t *read_timer;
+  e_timer_t *write_timer;
+  e_timer_t *keepalive_timer;
+  e_timer_t *heartbeat_timer;
   // upstream
-//  struct hio_s*       upstream_io;    // for hio_setup_upstream
-//  // unpack
+  struct e_io_s *upstream_io;    // for hio_setup_upstream
+  // unpack
   unpack_setting_t *unpack_setting; // for hio_set_unpack
   // ssl
   void *ssl; // for hio_enable_ssl / hio_set_ssl
   // context
   void *ctx; // for hio_context / hio_set_context
-//// private:
-//#if defined(EVENT_POLL) || defined(EVENT_KQUEUE)
-//  int         event_index[2]; // for poll,kqueue
-//#endif
-//
-//#ifdef EVENT_IOCP
-//  void*       hovlp;          // for iocp/overlapio
-//#endif
-//
-//#if WITH_RUDP
-//  rudp_t          rudp;
-//#if WITH_KCP
-//    kcp_setting_t*  kcp_setting;
-//#endif
-//#endif
+// private:
+#if defined(EVENT_POLL) || defined(EVENT_KQUEUE)
+  int         event_index[2]; // for poll,kqueue
+#endif
+
+#ifdef EVENT_IOCP
+  void*       hovlp;          // for iocp/overlapio
+#endif
+
+#if WITH_RUDP
+  rudp_t          rudp;
+#if WITH_KCP
+    kcp_setting_t*  kcp_setting;
+#endif
+#endif
 };
-
-int e_io_fd(e_io_t *io);
-int e_io_error(e_io_t *io);
-
-void e_io_accept_cb(e_io_t *io);
-void e_io_connect_cb(e_io_t* io);
 
 int hio_close_async(e_io_t *io);
 
-void e_io_close_cb(e_io_t *io);
-
 int e_io_read_remain(e_io_t *io);
-void e_io_read_cb(e_io_t *io, void *buf, int len);
-
-
-void e_io_write_cb(e_io_t *io, const void *buf, int len);
-
-void e_io_init(e_io_t *io);
-void e_io_ready(e_io_t *io);
-
-void e_io_done(e_io_t *io);
-struct sockaddr *e_io_localaddr(e_io_t *io);
-struct sockaddr *e_io_peeraddr(e_io_t *io);
 
 int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR));
 int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 
-void e_io_free(e_io_t *io);
 e_io_t *e_io_get(e_loop_t *loop, int fd);
-int hio_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
+
 
 // @hio_create_socket: socket -> bind -> listen
 // sockaddr_set_ipport -> socket -> hio_get(loop, sockfd) ->
@@ -180,21 +160,59 @@ e_io_t *e_io_create_socket(e_loop_t *loop, const char *host, int port,
 void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 
-
-bool e_io_is_alloced_readbuf(e_io_t *io);
-void e_io_free_readbuf(e_io_t *io);
-void e_io_alloc_readbuf(e_io_t* io, int len);
-
-void e_io_handle_read(e_io_t* io, void* buf, int readbytes);
-
 // set callbacks
 void e_io_setcb_close(e_io_t *io, e_close_cb close_cb);
 void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
 void e_io_setcb_connect(e_io_t *io, e_connect_cb connect_cb);
 void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
 void e_io_setcb_write(e_io_t *io, e_write_cb write_cb);
+// get callbacks
+e_accept_cb e_io_getcb_accept(e_io_t *io);
+e_connect_cb e_io_getcb_connect(e_io_t *io);
+e_read_cb e_io_getcb_read(e_io_t *io);
+e_write_cb e_io_getcb_write(e_io_t *io);
+e_close_cb e_io_getcb_close(e_io_t *io);
+// call callbacks
+void e_io_accept_cb(e_io_t *io);
+void e_io_connect_cb(e_io_t *io);
+void e_io_handle_read(e_io_t *io, void *buf, int readbytes);
+void e_io_read_cb(e_io_t *io, void *buf, int len);
+void e_io_write_cb(e_io_t *io, const void *buf, int len);
+void e_io_close_cb(e_io_t *io);
 
-void e_io_del_connect_timer(e_io_t* io);
+// timer
+void e_io_del_connect_timer(e_io_t *io);
+void e_io_del_close_timer(e_io_t *io);
+void e_io_del_read_timer(e_io_t *io);
+void e_io_del_write_timer(e_io_t *io);
+void e_io_del_keepalive_timer(e_io_t *io);
+void e_io_del_heartbeat_timer(e_io_t *io);
+
+// readbuf
+bool e_io_is_loop_readbuf(e_io_t *io);
+bool e_io_is_alloced_readbuf(e_io_t *io);
+void e_io_free_readbuf(e_io_t *io);
+void e_io_alloc_readbuf(e_io_t *io, int len);
+
+// fields
+// NOTE: fd cannot be used as unique identifier, so we provide an id.
+uint32_t e_io_id(e_io_t *io);
+int e_io_fd(e_io_t *io);
+int e_io_error(e_io_t *io);
+int e_io_events(e_io_t *io);
+int e_io_revents(e_io_t *io);
+e_io_type_e e_io_type(e_io_t *io);
+struct sockaddr *e_io_localaddr(e_io_t *io);
+struct sockaddr *e_io_peeraddr(e_io_t *io);
+void e_io_set_context(e_io_t *io, void *ctx);
+void *e_io_context(e_io_t *io);
+bool e_io_is_opened(e_io_t *io);
+bool e_io_is_closed(e_io_t *io);
+fifo_buf_t *e_io_get_readbuf(e_io_t *io);
+size_t e_io_write_bufsize(e_io_t *io);
+bool e_io_write_queue_is_empty(e_io_t *io);
+uint64_t e_io_last_read_time(e_io_t *io);  // ms
+uint64_t e_io_last_write_time(e_io_t *io);  // ms
 
 #define e_io_read_start(io) e_io_read(io)
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)

@@ -15,6 +15,8 @@
 typedef struct e_loop_s e_loop_t;
 typedef struct e_io_s e_io_t;
 typedef struct e_event_s e_event_t;
+
+typedef struct e_idle_s      e_idle_t;
 typedef struct e_timer_s     e_timer_t;
 typedef struct e_timeout_s   e_timeout_t;
 typedef struct e_period_s    e_period_t;
@@ -44,7 +46,7 @@ typedef enum {
 #define e_event_cb(ev)           (((e_event_t*)(ev))->cb)
 
 typedef void (*e_event_cb)(e_event_t *ev);
-//typedef void (*e_idle_cb)(e_idle_t *idle);
+typedef void (*e_idle_cb)(e_idle_t *idle);
 typedef void (*e_timer_cb)(e_timer_t *timer);
 typedef void (*e_io_cb)(e_io_t *io);
 
@@ -122,6 +124,23 @@ struct e_period_s {
 #define IDLE_ENTRY(p)           container_of(p, e_idle_t,  node)
 #define TIMER_ENTRY(p)          container_of(p, e_timer_t, node)
 
+/*
+ * e_io lifeline:
+ *
+ * fd =>
+ * e_io_get => EVENT_ALLOC_SIZEOF(io) => e_io_init => e_io_ready
+ *
+ * e_io_read  => e_io_add(EVENT_READ) => e_io_read_cb
+ * e_io_write => e_io_add(EVENT_WRITE) => e_io_write_cb
+ * e_io_close => e_io_done => e_io_del(EVENT_RDWR) => e_io_close_cb
+ *
+ * e_loop_stop => e_loop_free => e_io_free => EVENT_FREE(io)
+ */
+void e_io_init(e_io_t *io);
+void e_io_ready(e_io_t *io);
+void e_io_done(e_io_t *io);
+void e_io_free(e_io_t *io);
+uint32_t e_io_next_id();
 uint64_t e_loop_next_event_id();
 
 #define EVENT_ACTIVE(ev) \
@@ -162,4 +181,12 @@ uint64_t e_loop_next_event_id();
             EVENT_FREE(ev);\
         }\
     } while(0)
+
+#define EVENT_RESET(ev) \
+    do {\
+        ev->destroy = 0;\
+        EVENT_ACTIVE(ev);\
+        ev->pending = 0;\
+    } while(0)
+
 #endif //EVENT_EVENT_H

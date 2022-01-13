@@ -11,7 +11,6 @@
 #include "e_queue.h"
 #include "e_buf.h"
 #include "e_heap.h"
-#include "e_loop_timer.h"
 
 // loop
 #define EVENT_LOOP_FLAG_RUN_ONCE                     0x00000001
@@ -45,7 +44,7 @@ struct e_loop_s {
   uint64_t loop_cnt;
   long pid;
   long tid;
-//  void *userdata;
+  void *userdata;
 
 //private:
   // events
@@ -77,15 +76,61 @@ typedef struct e_loop_s e_loop_t;
 #define ELOOP_FLAG_AUTO_FREE                    0x00000002
 #define ELOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void __e_timer_del(e_timer_t* timer);
-static void __e_idle_del(e_idle_t* idle);
+// timer
+/*
+ * minute   hour    day     week    month       cb
+ * 0~59     0~23    1~31    0~6     1~12
+ *  -1      -1      -1      -1      -1          cron.minutely
+ *  30      -1      -1      -1      -1          cron.hourly
+ *  30      1       -1      -1      -1          cron.daily
+ *  30      1       15      -1      -1          cron.monthly
+ *  30      1       -1       5      -1          cron.weekly
+ *  30      1        1      -1      10          cron.yearly
+ */
+e_timer_t *e_timer_add_period(e_loop_t *loop, e_timer_cb cb,
+                              int8_t minute DEFAULT(0), int8_t hour  DEFAULT(-1), int8_t day DEFAULT(-1),
+                              int8_t week   DEFAULT(-1), int8_t month DEFAULT(-1), uint32_t repeat DEFAULT(INFINITE));
+e_timer_t *e_timer_add(e_loop_t *loop, e_timer_cb cb, uint32_t timeout, uint32_t repeat DEFAULT(INFINITE));
+void e_timer_del(e_timer_t *timer);
+void e_timer_reset(e_timer_t *timer);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// idle
+e_idle_t *e_idle_add(e_loop_t *loop, e_idle_cb cb, uint32_t repeat DEFAULT(INFINITE));
+void e_idle_del(e_idle_t *idle);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// custom_event
+/*
+ * e_event_t ev;
+ * memset(&ev, 0, sizeof(e_event_t));
+ * ev.event_type = (e_event_type_e)(EVENT_TYPE_CUSTOM + 1);
+ * ev.cb = custom_event_cb;
+ * ev.userdata = userdata;
+ * e_loop_post_event(loop, &ev);
+ */
+void e_loop_post_event(e_loop_t *loop, e_event_t *ev);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// userdata
+void e_loop_set_userdata(e_loop_t *loop, void *userdata);
+void *e_loop_userdata(e_loop_t *loop);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int e_loop_create_sockpair(e_loop_t *loop);
+
+static void __e_timer_del(e_timer_t *timer);
+static void __e_idle_del(e_idle_t *idle);
 
 e_loop_t *e_loop_new(int flags DEFAULT(ELOOP_FLAG_AUTO_FREE));
 void e_loop_free(e_loop_t **pp);
 int e_loop_run(e_loop_t *loop);
-
-void e_loop_post_event(e_loop_t *loop, e_event_t *ev);
 
 uint64_t e_loop_now(e_loop_t *loop);          // s
 uint64_t e_loop_now_ms(e_loop_t *loop);       // ms

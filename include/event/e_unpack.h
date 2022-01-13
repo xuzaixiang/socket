@@ -5,9 +5,9 @@
 
 //-----------------unpack---------------------------------------------
 typedef enum {
-  UNPACK_BY_FIXED_LENGTH  = 1,    // Not recommended
-  UNPACK_BY_DELIMITER     = 2,    // Suitable for text protocol
-  UNPACK_BY_LENGTH_FIELD  = 3,    // Suitable for binary protocol
+  UNPACK_BY_FIXED_LENGTH = 1,    // Not recommended
+  UNPACK_BY_DELIMITER = 2,    // Suitable for text protocol
+  UNPACK_BY_LENGTH_FIELD = 3,    // Suitable for binary protocol
 } unpack_mode_e;
 
 #define DEFAULT_PACKAGE_MAX_LENGTH  (1 << 21)   // 2M
@@ -17,23 +17,23 @@ typedef enum {
 
 // UNPACK_BY_LENGTH_FIELD
 typedef enum {
-  ENCODE_BY_VARINT        = 17,               // 1 MSB + 7 bits
+  ENCODE_BY_VARINT = 17,               // 1 MSB + 7 bits
   ENCODE_BY_LITTEL_ENDIAN = LITTLE_ENDIAN,    // 1234
-  ENCODE_BY_BIG_ENDIAN    = BIG_ENDIAN,       // 4321
+  ENCODE_BY_BIG_ENDIAN = BIG_ENDIAN,       // 4321
 } unpack_coding_e;
 
 typedef struct unpack_setting_s {
-  unpack_mode_e   mode;
-  unsigned int    package_max_length;
+  unpack_mode_e mode;
+  unsigned int package_max_length;
   union {
     // UNPACK_BY_FIXED_LENGTH
     struct {
-      unsigned int    fixed_length;
+      unsigned int fixed_length;
     };
     // UNPACK_BY_DELIMITER
     struct {
-      unsigned char   delimiter[PACKAGE_MAX_DELIMITER_BYTES];
-      unsigned short  delimiter_bytes;
+      unsigned char delimiter[PACKAGE_MAX_DELIMITER_BYTES];
+      unsigned short delimiter_bytes;
     };
     // UNPACK_BY_LENGTH_FIELD
     /* package_len = head_len + body_len + length_adjustment
@@ -45,10 +45,10 @@ typedef struct unpack_setting_s {
      *
      */
     struct {
-      unsigned short  body_offset;
-      unsigned short  length_field_offset;
-      unsigned short  length_field_bytes;
-      short  length_adjustment;
+      unsigned short body_offset;
+      unsigned short length_field_offset;
+      unsigned short length_field_bytes;
+      short length_adjustment;
       unpack_coding_e length_field_coding;
     };
   };
@@ -70,9 +70,10 @@ typedef struct unpack_setting_s {
 } unpack_setting_t;
 
 typedef struct e_io_s e_io_t;
-int e_io_unpack(e_io_t* io, void* buf, int readbytes);
-int e_io_unpack_by_fixed_length(e_io_t* io, void* buf, int readbytes);
-int e_io_unpack_by_delimiter(e_io_t* io, void* buf, int readbytes);
-int e_io_unpack_by_length_field(e_io_t* io, void* buf, int readbytes);
-
+int e_io_unpack(e_io_t *io, void *buf, int readbytes);
+int e_io_unpack_by_fixed_length(e_io_t *io, void *buf, int readbytes);
+int e_io_unpack_by_delimiter(e_io_t *io, void *buf, int readbytes);
+int e_io_unpack_by_length_field(e_io_t *io, void *buf, int readbytes);
+void e_io_set_unpack(e_io_t *io, unpack_setting_t *setting);
+void e_io_unset_unpack(e_io_t *io);
 #endif

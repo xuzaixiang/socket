@@ -3,6 +3,7 @@
 //
 #include "event/e_unpack.h"
 #include "event/e_io.h"
+#include "event/e_nio.h"
 #include "util/e_math.h"
 
 int e_io_unpack(e_io_t* io, void* buf, int readbytes){
@@ -173,4 +174,44 @@ int e_io_unpack_by_length_field(e_io_t* io, void* buf, int readbytes) {
   }
 
   return handled;
+}
+
+void e_io_set_unpack(e_io_t* io, unpack_setting_t* setting){
+  e_io_unset_unpack(io);
+  if (setting == NULL) return;
+
+  io->unpack_setting = setting;
+  if (io->unpack_setting->package_max_length == 0) {
+    io->unpack_setting->package_max_length = DEFAULT_PACKAGE_MAX_LENGTH;
+  }
+  if (io->unpack_setting->mode == UNPACK_BY_FIXED_LENGTH) {
+    assert(io->unpack_setting->fixed_length != 0 &&
+        io->unpack_setting->fixed_length <= io->unpack_setting->package_max_length);
+  }
+  else if (io->unpack_setting->mode == UNPACK_BY_DELIMITER) {
+    if (io->unpack_setting->delimiter_bytes == 0) {
+      io->unpack_setting->delimiter_bytes = strlen((char*)io->unpack_setting->delimiter);
+    }
+  }
+  else if (io->unpack_setting->mode == UNPACK_BY_LENGTH_FIELD) {
+    assert(io->unpack_setting->body_offset >=
+        io->unpack_setting->length_field_offset +
+            io->unpack_setting->length_field_bytes);
+  }
+
+  // NOTE: unpack must have own readbuf
+  if (io->unpack_setting->mode == UNPACK_BY_FIXED_LENGTH) {
+    io->readbuf.len = io->unpack_setting->fixed_length;
+  } else {
+    io->readbuf.len = EVENT_LOOP_READ_BUFSIZE;
+  }
+  e_io_alloc_readbuf(io, io->readbuf.len);
+}
+
+void e_io_unset_unpack(e_io_t* io){
+  if (io->unpack_setting) {
+    io->unpack_setting = NULL;
+    // NOTE: unpack has own readbuf
+    e_io_free_readbuf(io);
+  }
 }

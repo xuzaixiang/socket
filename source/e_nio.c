@@ -6,8 +6,21 @@
 #include "event/e_loop.h"
 #include "e_watcher.h"
 
-static void __connect_timeout_cb(e_timer_t* timer) {
-  e_io_t* io = (e_io_t*)timer->privdata;
+static void __close_timeout_cb(e_timer_t *timer) {
+  e_io_t *io = (e_io_t *) timer->privdata;
+  if (io) {
+    char localaddrstr[SOCKADDR_STRLEN] = {0};
+    char peeraddrstr[SOCKADDR_STRLEN] = {0};
+//    hlogw("close timeout [%s] <=> [%s]",
+//          SOCKADDR_STR(io->localaddr, localaddrstr),
+//          SOCKADDR_STR(io->peeraddr, peeraddrstr));
+    io->error = ETIMEDOUT;
+    e_io_close(io);
+  }
+}
+
+static void __connect_timeout_cb(e_timer_t *timer) {
+  e_io_t *io = (e_io_t *) timer->privdata;
   if (io) {
     char localaddrstr[SOCKADDR_STRLEN] = {0};
     char peeraddrstr[SOCKADDR_STRLEN] = {0};
@@ -18,12 +31,12 @@ static void __connect_timeout_cb(e_timer_t* timer) {
     e_io_close(io);
   }
 }
-static void __connect_cb(e_io_t* io) {
+static void __connect_cb(e_io_t *io) {
   e_io_del_connect_timer(io);
   e_io_connect_cb(io);
 }
 
-static int __e_io_read(e_io_t* io, void* buf, int len) {
+static int __e_io_read(e_io_t *io, void *buf, int len) {
   int nread = 0;
   switch (io->io_type) {
     case EVENT_IO_TYPE_SSL:
@@ -38,14 +51,12 @@ static int __e_io_read(e_io_t* io, void* buf, int len) {
       break;
     case EVENT_IO_TYPE_UDP:
     case EVENT_IO_TYPE_KCP:
-    case EVENT_IO_TYPE_IP:
-    {
+    case EVENT_IO_TYPE_IP: {
       socklen_t addrlen = sizeof(sockaddr_u);
       nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
     }
       break;
-    default:
-      nread = read(io->fd, buf, len);
+    default:nread = read(io->fd, buf, len);
       break;
   }
   // hlogd("read retval=%d", nread);
@@ -56,19 +67,19 @@ static void __accept_cb(e_io_t *io) {
   e_io_accept_cb(io);
 }
 
-static void __read_cb(e_io_t* io, void* buf, int readbytes) {
+static void __read_cb(e_io_t *io, void *buf, int readbytes) {
   // printd("> %.*s\n", readbytes, buf);
   io->last_read_hrtime = io->loop->cur_hrtime;
   e_io_handle_read(io, buf, readbytes);
 }
 static void __close_cb(e_io_t *io) {
   // printd("close fd=%d\n", io->fd);
-//  e_io_del_connect_timer(io);
-//  e_io_del_close_timer(io);
-//  e_io_del_read_timer(io);
-//  e_io_del_write_timer(io);
-//  e_io_del_keepalive_timer(io);
-//  e_io_del_heartbeat_timer(io);
+  e_io_del_connect_timer(io);
+  e_io_del_close_timer(io);
+  e_io_del_read_timer(io);
+  e_io_del_write_timer(io);
+  e_io_del_keepalive_timer(io);
+  e_io_del_heartbeat_timer(io);
   e_io_close_cb(io);
 }
 
@@ -103,7 +114,7 @@ static int __nio_write(e_io_t *io, const void *buf, int len) {
   return nwrite;
 }
 
-static void nio_write(e_io_t* io) {
+static void nio_write(e_io_t *io) {
   // printd("nio_write fd=%d\n", io->fd);
   int nwrite = 0, err = 0;
   e_recursive_mutex_lock(&io->write_mutex);
@@ -116,9 +127,9 @@ static void nio_write(e_io_t* io) {
     }
     return;
   }
-  offset_buf_t* pbuf = write_queue_front(&io->write_queue);
-  char* base = pbuf->base;
-  char* buf = base + pbuf->offset;
+  offset_buf_t *pbuf = write_queue_front(&io->write_queue);
+  char *base = pbuf->base;
+  char *buf = base + pbuf->offset;
   int len = pbuf->len - pbuf->offset;
   nwrite = __nio_write(io, buf, len);
   // printd("write retval=%d\n", nwrite);
@@ -157,8 +168,7 @@ static void nio_write(e_io_t* io) {
   e_io_close(io);
 }
 
-
-static void nio_connect(e_io_t* io) {
+static void nio_connect(e_io_t *io) {
   // printd("nio_connect connfd=%d\n", io->fd);
   socklen_t addrlen = sizeof(sockaddr_u);
   int ret = getpeername(io->fd, io->peeraddr, &addrlen);
@@ -166,8 +176,7 @@ static void nio_connect(e_io_t* io) {
     io->error = socket_errno();
     printd("connect failed: %s: %d\n", strerror(io->error), io->error);
     goto connect_failed;
-  }
-  else {
+  } else {
     addrlen = sizeof(sockaddr_u);
     getsockname(io->fd, io->localaddr, &addrlen);
 
@@ -184,8 +193,7 @@ static void nio_connect(e_io_t* io) {
 //        io->ssl = ssl;
 //      }
 //      ssl_client_handshake(io);
-    }
-    else {
+    } else {
       // NOTE: SSL call connect_cb after handshake finished
       __connect_cb(io);
     }
@@ -221,9 +229,9 @@ static void nio_accept(e_io_t *io) {
     // NOTE: inherit from listenio
     connio->accept_cb = io->accept_cb;
     connio->userdata = io->userdata;
-//    if (io->unpack_setting) {
-//      hio_set_unpack(connio, io->unpack_setting);
-//    }
+    if (io->unpack_setting) {
+      e_io_set_unpack(connio, io->unpack_setting);
+    }
 
     if (io->io_type == EVENT_IO_TYPE_SSL) {
 //      if (connio->ssl == NULL) {
@@ -315,8 +323,7 @@ static void e_io_handle_events(e_io_t *io) {
       io->connect = 0;
 
       nio_connect(io);
-    }
-    else {
+    } else {
       nio_write(io);
     }
   }
@@ -324,7 +331,7 @@ static void e_io_handle_events(e_io_t *io) {
   io->revents = 0;
 }
 
-int e_io_connect(e_io_t* io) {
+int e_io_connect(e_io_t *io) {
   int ret = connect(io->fd, io->peeraddr, SOCKADDR_LEN(io->peeraddr));
 #ifdef OS_WIN
   if (ret < 0 && socket_errno() != WSAEWOULDBLOCK) {
@@ -344,7 +351,7 @@ int e_io_connect(e_io_t* io) {
   io->connect_timer = e_timer_add(io->loop, __connect_timeout_cb, timeout, 1);
   io->connect_timer->privdata = io;
   io->connect = 1;
-  return hio_add(io, e_io_handle_events, EVENT_WRITE);
+  return e_io_add(io, e_io_handle_events, EVENT_WRITE);
 }
 
 int e_io_close(e_io_t *io) {
@@ -362,9 +369,9 @@ int e_io_close(e_io_t *io) {
     io->close = 1;
     e_recursive_mutex_unlock(&io->write_mutex);
 //    hlogw("write_queue not empty, close later.");
-//    int timeout_ms = io->close_timeout ? io->close_timeout : HIO_DEFAULT_CLOSE_TIMEOUT;
-//    io->close_timer = htimer_add(io->loop, __close_timeout_cb, timeout_ms, 1);
-//    io->close_timer->privdata = io;
+    int timeout_ms = io->close_timeout ? io->close_timeout : EVENT_IO_DEFAULT_CLOSE_TIMEOUT;
+    io->close_timer = e_timer_add(io->loop, __close_timeout_cb, timeout_ms, 1);
+    io->close_timer->privdata = io;
     return 0;
   }
   io->closed = 1;
@@ -419,7 +426,7 @@ int e_io_write(e_io_t *io, const void *buf, size_t len) {
       goto write_done;
     }
     enqueue:
-    hio_add(io, e_io_handle_events, EVENT_WRITE);
+    e_io_add(io, e_io_handle_events, EVENT_WRITE);
   }
   if (nwrite < len) {
     if (io->write_bufsize + len - nwrite > EVENT_MAX_WRITE_BUFSIZE) {
@@ -469,7 +476,7 @@ int e_io_read(e_io_t *io) {
 //    hloge("hio_read called but fd[%d] already closed!", io->fd);
     return -1;
   }
-  hio_add(io, e_io_handle_events, EVENT_READ);
+  e_io_add(io, e_io_handle_events, EVENT_READ);
   if (io->readbuf.tail > io->readbuf.head &&
       io->unpack_setting == NULL &&
       io->read_flags == 0) {

@@ -1,6 +1,9 @@
 #ifndef EVENT_DEF_H
 #define EVENT_DEF_H
 
+#define SOCKPAIR_READ_INDEX     0
+#define SOCKPAIR_WRITE_INDEX    1
+
 #ifndef INFINITE
 #define INFINITE    (uint32_t)-1
 #endif

@@ -3,5 +3,6 @@
 
 #include <sys/time.h>
 #include "sys_call.h"
+#include "e_fcntl.h"
 
 #endif //EVENT_UNIX_H

@@ -6,11 +6,11 @@ macro(with_option option)
     add_definitions(-D${option})
 endmacro()
 
-option(OPTION_EVENT_ALLOC_COUNT "count alloc !" ON)
-option(OPTION_EVENT_ALLOC_PRINT "whether pint alloc info or not !" ON)
+#option(OPTION_EVENT_ALLOC_COUNT "count alloc !" ON)
+#option(OPTION_EVENT_ALLOC_PRINT "whether pint alloc info or not !" ON)
 
-with_option(OPTION_EVENT_ALLOC_COUNT)
-with_option(OPTION_EVENT_ALLOC_PRINT)
+#with_option(OPTION_EVENT_ALLOC_COUNT)
+#with_option(OPTION_EVENT_ALLOC_PRINT)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -20,8 +20,8 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 
 add_subdirectory(config)
 
-add_definitions(-DEVENT_ALLOC_COUNT)
-add_definitions(-DEVENT_ALLOC_PRINT)
+#add_definitions(-DEVENT_ALLOC_COUNT)
+#add_definitions(-DEVENT_ALLOC_PRINT)
 
 add_subdirectory(../third_party/cus/source cus)
 set(event_source
@@ -30,6 +30,13 @@ set(event_source
         e_loop_timer.c
         e_alloc.c
         e_io.c
+        e_io_timer.c
+        e_io_readbuf.c
+        loop/e_idle.c
+        loop/e_custom_event.c
+        loop/e_userdata.c
+        io/e_fields.c
+        io/e_cb.c
         e_ssl.c
         e_nio.c
         e_socket.c
