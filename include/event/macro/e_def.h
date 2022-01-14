@@ -5,7 +5,6 @@
 #ifndef EVENT_DEF_H
 #define EVENT_DEF_H
 
-#include "e_export.h"
 
 #if defined(__cplusplus)
 #define DEFAULT(x)  = x
