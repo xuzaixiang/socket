@@ -21,7 +21,7 @@
 #else
 #include "posix/e_posix.h"
 #if defined(EVENT_OS_LINUX)
-
+#include <sys/socket.h>
 #else
 
 #endif

@@ -27,4 +27,3 @@ e_loop_t *e_loop_new(uint32_t flags) {
   loop->flags |= flags;
   return loop;
 }
-

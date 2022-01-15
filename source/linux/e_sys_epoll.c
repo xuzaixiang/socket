@@ -121,12 +121,12 @@ int iowatcher_poll_events(e_loop_t* loop, int timeout) {
       ++nevents;
       e_io_t* io = loop->ios.ptr[fd];
       if (io) {
-//        if (revents & (EPOLLIN | EPOLLHUP | EPOLLERR)) {
-//          io->revents |= HV_READ;
-//        }
-//        if (revents & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
-//          io->revents |= HV_WRITE;
-//        }
+        if (revents & (EPOLLIN | EPOLLHUP | EPOLLERR)) {
+          io->revents |= EVENT_READ;
+        }
+        if (revents & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
+          io->revents |= EVENT_WRITE;
+        }
 //        EVENT_PENDING(io);
       }
     }
