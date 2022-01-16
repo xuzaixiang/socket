@@ -8,7 +8,6 @@
 #include "macro/e_def.h"
 #include "macro/e_export.h"
 #include "util/e_alloc.h"
-#include "util/e_atomic.h"
 #include "al/e_array.h"
 
 #include "e_iowatcher.h"
@@ -22,6 +21,9 @@
 #include "posix/e_posix.h"
 #if defined(EVENT_OS_LINUX)
 #include <sys/socket.h>
+#include <netinet/in.h> // sockaddr_in sockaddr_in6
+#include <arpa/inet.h> // inet_pton
+#include <netdb.h> // gethostbyname
 #else
 
 #endif

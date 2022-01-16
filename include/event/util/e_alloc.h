@@ -1,5 +1,3 @@
-
-
 //
 // Created by 20123460 on 2022/1/8.
 //
@@ -14,20 +12,29 @@
 extern "C" {
 #endif
 
-void *e_malloc_safe(size_t size);
-void *e_realloc_safe(void *oldptr, size_t newsize, size_t oldsize);
-void *e_calloc_safe(size_t nmemb, size_t size);
-void *e_zalloc_safe(size_t size);
-void e_free_safe(void *ptr);
+typedef void *(*e_malloc_func)(size_t size);
+typedef void *(*e_realloc_func)(void *ptr, size_t size);
+typedef void *(*e_calloc_func)(size_t count, size_t size);
+typedef void (*e_free_func)(void *ptr);
+
+void *e_malloc(size_t size);
+void *e_realloc(void *ptr, size_t size);
+void *e_calloc(size_t nmemb, size_t size);
+void *e_zalloc(size_t size);
+void e_free(void *ptr);
+
 
 #ifdef EVENT_ALLOC_COUNT
-#include <stdio.h>
 long e_alloc_count();
 long e_free_count();
 void e_memcheck();
 #define EVENT_MEMCHECK    atexit(e_memcheck)
-#define printd(...) printf(__VA_ARGS__)
-#define fprintfd(fd,msg) fprintf(fd,msg)
+#endif
+
+#ifdef EVENT_ALLOC_PRINT
+#include <stdio.h>
+#define printfd(...) printf(__VA_ARGS__)
+#define fprintfd(fd, msg) fprintf(fd,msg)
 #else
 #define printd(...)
 #define fprintfd(fd,msg)
@@ -35,8 +42,8 @@ void e_memcheck();
 
 #define EVENT_ALLOC(ptr, size)\
     do {\
-        *(void**)&(ptr) = e_zalloc_safe(size);\
-        printd("alloc(%p, size=%llu)\tat [%s:%d:%s]\n", ptr, (unsigned long long)size, __FILE__, __LINE__, __FUNCTION__);\
+        *(void**)&(ptr) = e_zalloc(size);\
+        printfd("alloc(%p, size=%llu)\tat [%s:%d:%s]\n", ptr, (unsigned long long)size, __FILE__, __LINE__, __FUNCTION__);\
     } while(0)
 
 #define EVENT_ALLOC_SIZEOF(ptr)  EVENT_ALLOC(ptr, sizeof(*(ptr)))
@@ -44,8 +51,8 @@ void e_memcheck();
 #define EVENT_FREE(ptr)\
     do {\
         if (ptr) {\
-            e_free_safe(ptr);\
-            printd("free( %p )\tat [%s:%d:%s]\n", ptr, __FILE__, __LINE__, __FUNCTION__);\
+            e_free(ptr);\
+            printfd("free( %p )\tat [%s:%d:%s]\n", ptr, __FILE__, __LINE__, __FUNCTION__);\
             ptr = NULL;\
         }\
     } while(0)

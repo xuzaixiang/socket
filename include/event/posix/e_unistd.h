@@ -4,4 +4,5 @@
 #include <unistd.h>
 #define e_getpid   (long)getpid
 
+#define closesocket(fd) close(fd)
 #endif

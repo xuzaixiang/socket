@@ -20,7 +20,7 @@ set(event_source
         source/e_socket.c
         source/e_sockaddr.c
         source/util/e_alloc.c
-
+        source/util/e_string.c
         source/loop/e_server.c
         )
 
