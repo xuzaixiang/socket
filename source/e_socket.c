@@ -49,7 +49,7 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
       }
     }
   }
-//  io = e_io_get(loop, sockfd);
+  io = e_io_get(loop, sockfd);
 //  assert(io != NULL);
 //  io->io_type = type;
 //  if (side == HIO_SERVER_SIDE) {

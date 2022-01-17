@@ -19,9 +19,10 @@ set(event_source
         source/e_io.c
         source/e_socket.c
         source/e_sockaddr.c
+        source/loop/e_server.c
         source/util/e_alloc.c
         source/util/e_string.c
-        source/loop/e_server.c
+        source/util/e_math.c
         )
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
