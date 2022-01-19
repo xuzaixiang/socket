@@ -17,20 +17,32 @@
 #define EVENT_WRITE 0x0004
 #define EVENT_RDWR  (EVENT_READ|EVENT_WRITE)
 
+#define EVENT_READ_INDEX  0
+#define EVENT_WRITE_INDEX 1
+
+#ifndef EVENT_INFINITE
+#define EVENT_INFINITE    (uint32_t)-1
+#endif
+
+
+#define EVENT_LOWEST_PRIORITY    (-5)
+#define EVENT_LOW_PRIORITY       (-3)
+#define EVENT_NORMAL_PRIORITY      0
+#define EVENT_HIGH_PRIORITY        3
+#define EVENT_HIGHEST_PRIORITY     5
+#define EVENT_PRIORITY_SIZE  (EVENT_HIGHEST_PRIORITY-EVENT_LOWEST_PRIORITY+1)
+#define EVENT_PRIORITY_INDEX(priority) (priority-EVENT_LOWEST_PRIORITY)
+
 #if defined(EVENT_OS_WIN)
 #else
 #include "posix/e_posix.h"
 #if defined(EVENT_OS_LINUX)
-#include <sys/socket.h>
-#include <netinet/in.h> // sockaddr_in sockaddr_in6
-#include <arpa/inet.h> // inet_pton
-#include <netdb.h> // gethostbyname
-#else
+#elif defined(EVENT_OS_MAC)
 
 #endif
 
-typedef struct e_event_s     e_event_t;
-typedef void (*e_event_cb)   (e_event_t* ev);
+typedef struct e_event_s e_event_t;
+typedef void (*e_event_cb)(e_event_t *ev);
 
 typedef enum {
   EVENT_TYPE_NONE = 0,
@@ -61,7 +73,6 @@ typedef enum {
 struct e_event_s {
   EVENT_FIELDS
 };
-
 
 #endif
 

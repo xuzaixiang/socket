@@ -8,8 +8,10 @@
 
 #ifdef EVENT_ALLOC_COUNT
 #include <stdatomic.h>
-static long local_alloc_count = 0;
-static long local_free_count = 0;
+static atomic_long local_alloc_count = 0;
+static atomic_long local_free_count = 0;
+
+
 long e_alloc_count() {
   return local_alloc_count;
 }

@@ -38,6 +38,9 @@ typedef struct e_loop_s {
 #define EVENT_LOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
 
 EVENT_EXPORT e_loop_t *e_loop_new(uint32_t flags DEFAULT(EVENT_LOOP_FLAG_AUTO_FREE));
+
+// server
 EVENT_EXPORT e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);
+
 
 #endif //EVENT_LOOP_H

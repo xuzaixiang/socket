@@ -17,9 +17,11 @@ endif ()
 set(event_source
         source/e_loop.c
         source/e_io.c
+        source/e_nio.c
         source/e_socket.c
         source/e_sockaddr.c
         source/loop/e_server.c
+        source/io/e_fields.c
         source/util/e_alloc.c
         source/util/e_string.c
         source/util/e_math.c
@@ -27,6 +29,8 @@ set(event_source
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     list(APPEND event_source source/linux/e_sys_epoll.c)
+elseif (APPLE)
+    list(APPEND event_source source/mac/e_kqueue.c)
 endif ()
 
 add_library(event

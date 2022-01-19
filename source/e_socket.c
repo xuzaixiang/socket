@@ -2,8 +2,16 @@
 // Created by 20123460 on 2022/1/15.
 //
 
-#include "e_socket.h"
+#include "event/e_socket.h"
 #include "event/e_sockaddr.h"
+#include <errno.h>
+
+int e_socket_errno(){
+#ifdef EVENT_OS_WIN
+  return WSAGetLastError();
+#endif
+  return errno;
+}
 
 e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t type, e_io_side_t side) {
   int sock_type = type & EVENT_IO_TYPE_SOCK_STREAM ? SOCK_STREAM :
@@ -50,13 +58,13 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
     }
   }
   io = e_io_get(loop, sockfd);
-//  assert(io != NULL);
-//  io->io_type = type;
-//  if (side == HIO_SERVER_SIDE) {
-//    hio_set_localaddr(io, &addr.sa, sockaddr_len(&addr));
-//    io->priority = HEVENT_HIGH_PRIORITY;
-//  } else {
-//    hio_set_peeraddr(io, &addr.sa, sockaddr_len(&addr));
-//  }
+  assert(io != NULL);
+  io->io_type = type;
+  if (side == EVENT_IO_SERVER_SIDE) {
+    e_io_set_localaddr(io, &addr.sa, e_sockaddr_len(&addr));
+    io->priority = EVENT_HIGH_PRIORITY;
+  } else {
+    e_io_set_peeraddr(io, &addr.sa, e_sockaddr_len(&addr));
+  }
   return io;
 }

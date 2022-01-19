@@ -12,8 +12,8 @@
 #include <TargetConditionals.h>
 #if defined(TARGET_OS_MAC) && TARGET_OS_MAC
 #define EVENT_OS_MAC
-#else "unsupport operating system platform!"
-#error
+#else
+#error "unsupport operating system platform!"
 #endif
 #else
 #error "unsupport operating system platform!"

@@ -3,6 +3,11 @@
 
 #include "e_event.h"
 #include "e_buf.h"
+#include "e_sockaddr.h"
+
+typedef struct e_io_s e_io_t;
+typedef void (*e_accept_cb)(e_io_t *io);
+typedef void (*e_io_cb)(e_io_t *io);
 
 EVENT_QUEUE_DECL(offset_buf_t, write_queue)
 
@@ -36,22 +41,47 @@ typedef enum e_io_side_e {
   EVENT_IO_CLIENT_SIDE = 1,
 } e_io_side_t;
 
-typedef struct e_io_s {
+struct e_io_s {
   EVENT_FIELDS
+  unsigned ready: 1;
+  unsigned closed: 1;
+  unsigned accept: 1;
+  // public:
+  e_io_type_t io_type;
+  uint32_t id; // fd cannot be used as unique identifier, so we provide an id
+  int fd;
+  int error;
   int events;
   int revents;
-
-  int         fd;
+  struct sockaddr *localaddr;
+  struct sockaddr *peeraddr;
 
   // write
 //  struct write_queue  write_queue;
 //  hrecursive_mutex_t  write_mutex; // lock write and write_queue
-  uint32_t            write_bufsize;
+  uint32_t write_bufsize;
 
-} e_io_t;
+#if defined(EVENT_OS_MAC)
+  int event_index[2]; // for poll,kqueue
+#endif
+
+  e_accept_cb accept_cb;
+};
+
+// nio
+// e_io_add(io, EVENT_READ) => accept => e_accept_cb
+EVENT_EXPORT int e_io_accept(e_io_t *io);
 
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
+EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 
+EVENT_EXPORT void e_io_init(e_io_t *io);
+EVENT_EXPORT void e_io_ready(e_io_t *io);
 
-EVENT_EXPORT void e_io_init(e_io_t* io);
+EVENT_EXPORT int e_io_close(e_io_t *io);
+
+EVENT_EXPORT void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
+EVENT_EXPORT void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
+
+EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
 #endif
