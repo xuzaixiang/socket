@@ -18,6 +18,7 @@ set(event_source
         source/e_loop.c
         source/e_io.c
         source/e_nio.c
+        source/e_event.c
         source/e_socket.c
         source/e_sockaddr.c
         source/loop/e_server.c

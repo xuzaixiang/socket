@@ -74,6 +74,22 @@ struct e_event_s {
   EVENT_FIELDS
 };
 
+uint64_t e_event_next_id();
+
+#define EVENT_ACTIVE(ev) \
+    if (!ev->active) {\
+        ev->active = 1;\
+        ev->loop->nactives++;\
+    }
+
+#define EVENT_ADD(loop, ev, cb) \
+    do {\
+        ev->loop = loop;\
+        ev->event_id = e_event_next_id();\
+        ev->cb = (e_event_cb)cb;\
+        EVENT_ACTIVE(ev);\
+    } while(0)
+
 #endif
 
 #endif //EVENT_EVENT_H

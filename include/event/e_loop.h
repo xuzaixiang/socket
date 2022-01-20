@@ -30,6 +30,8 @@ typedef struct e_loop_s {
   struct io_array ios;
   uint32_t nios;
 
+  // events
+  uint32_t                    nactives;
   void *iowatcher;
 } e_loop_t;
 
