@@ -65,8 +65,8 @@ typedef enum {
     uint64_t              event_id;       \
     e_event_cb            cb;             \
     void*                 userdata;       \
-    void*                 privdata;       \
-    struct hevent_s*      pending_next;   \
+    void*                 privdata;    \
+    struct e_event_s*      pending_next;   \
     int                   priority;       \
     EVENT_FLAGS
 
@@ -91,5 +91,16 @@ uint64_t e_event_next_id();
     } while(0)
 
 #endif
+
+#define EVENT_PENDING(ev) \
+    do {\
+        if (!ev->pending) {\
+            ev->pending = 1;\
+            ev->loop->npendings++;\
+            e_event_t** phead = &ev->loop->pendings[EVENT_PRIORITY_INDEX(ev->priority)];\
+            ev->pending_next = *phead;\
+            *phead = (e_event_t*)ev;\
+        }\
+    } while(0)
 
 #endif //EVENT_EVENT_H

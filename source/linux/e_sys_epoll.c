@@ -127,7 +127,7 @@ int iowatcher_poll_events(e_loop_t* loop, int timeout) {
         if (revents & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
           io->revents |= EVENT_WRITE;
         }
-//        EVENT_PENDING(io);
+        EVENT_PENDING(io);
       }
     }
     if (nevents == nepoll) break;
