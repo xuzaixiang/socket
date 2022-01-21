@@ -22,6 +22,7 @@ typedef enum e_loop_status_e {
 typedef struct e_loop_s {
   uint32_t flags;
   e_loop_status_t status;
+  uint64_t loop_cnt;
   long pid;
   long tid;
   void *userdata;
@@ -31,7 +32,8 @@ typedef struct e_loop_s {
   uint32_t nios;
 
   // events
-  uint32_t nactives;
+  uint32_t intern_nevents;
+  uint32_t nactives;// io active num
   uint32_t npendings;
   // pendings: with priority as array.index
   e_event_t *pendings[EVENT_PRIORITY_SIZE];
@@ -44,6 +46,7 @@ typedef struct e_loop_s {
 #define EVENT_LOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS   0x00000004
 
 EVENT_EXPORT e_loop_t *e_loop_new(uint32_t flags DEFAULT(EVENT_LOOP_FLAG_AUTO_FREE));
+EVENT_EXPORT int e_loop_run(e_loop_t *loop);
 
 // server
 EVENT_EXPORT e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);

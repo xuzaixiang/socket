@@ -56,7 +56,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   e_loop_t* loop = io->loop;
   if (!io->active) {
     EVENT_ADD(loop, io, cb);
-//    loop->nios++;
+    loop->nios++;
   }
   if (!io->ready) {
     e_io_ready(io);
