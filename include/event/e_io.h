@@ -65,12 +65,24 @@ struct e_io_s {
   int event_index[2]; // for poll,kqueue
 #endif
 
+// read
+//  fifo_buf_t readbuf;
+  unsigned int read_flags;
+  // for hio_read_until
+  union {
+    unsigned int read_until_length;
+    unsigned char read_until_delim;
+  };
+  uint32_t small_readbytes_cnt; // for readbuf autosize
+
   e_accept_cb accept_cb;
 };
 
 // nio
 // e_io_add(io, EVENT_READ) => accept => e_accept_cb
 EVENT_EXPORT int e_io_accept(e_io_t *io);
+
+void e_io_accept_cb(e_io_t *io);
 
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
 EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));

@@ -24,6 +24,9 @@ void e_io_ready(e_io_t *io) {
   // flags
   io->ready = 1;
   io->closed = 0;
+#if defined(EVENT_OS_MAC)
+  io->event_index[0] = io->event_index[1] = -1;
+#endif
 }
 
 e_io_t *e_io_get(e_loop_t *loop, int fd) {
@@ -53,7 +56,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   // Windows iowatcher not work on stdio
     if (io->fd < 3) return -1;
 #endif
-  e_loop_t* loop = io->loop;
+  e_loop_t *loop = io->loop;
   if (!io->active) {
     EVENT_ADD(loop, io, cb);
     loop->nios++;
@@ -62,7 +65,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
     e_io_ready(io);
   }
   if (cb) {
-    io->cb = (e_event_cb)cb;
+    io->cb = (e_event_cb) cb;
   }
   if (!(io->events & events)) {
     iowatcher_add_event(loop, io->fd, events);

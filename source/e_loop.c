@@ -70,6 +70,37 @@ static int e_loop_process_ios(e_loop_t* loop, int timeout) {
   return nevents < 0 ? 0 : nevents;
 }
 
+
+static int e_loop_process_pendings(e_loop_t* loop) {
+  if (loop->npendings == 0) return 0;
+
+  e_event_t* cur = NULL;
+  e_event_t* next = NULL;
+  int ncbs = 0;
+  // NOTE: invoke event callback from high to low sorted by priority.
+  for (int i = EVENT_PRIORITY_SIZE-1; i >= 0; --i) {
+    cur = loop->pendings[i];
+    while (cur) {
+      next = cur->pending_next;
+      if (cur->pending) {
+        if (cur->active && cur->cb) {
+          cur->cb(cur);
+          ++ncbs;
+        }
+        cur->pending = 0;
+        // NOTE: Now we can safely delete event marked as destroy.
+        if (cur->destroy) {
+          EVENT_DEL(cur);
+        }
+      }
+      cur = next;
+    }
+    loop->pendings[i] = NULL;
+  }
+  loop->npendings = 0;
+  return ncbs;
+}
+
 // hloop_process_ios -> hloop_process_timers -> hloop_process_idles -> hloop_process_pendings
 static int e_loop_process_events(e_loop_t* loop) {
   // ios -> timers -> idles
@@ -88,17 +119,17 @@ static int e_loop_process_events(e_loop_t* loop) {
 //    blocktime = MIN(blocktime, HLOOP_MAX_BLOCK_TIME);
 //  }
 //
+  nios = e_loop_process_ios(loop, EVENT_TIME_INFINITE);
   if (loop->nios) {
-    nios = e_loop_process_ios(loop, -1);
   } else {
 //    hv_msleep(blocktime);
   }
 //  hloop_update_time(loop);
 //  // wakeup by hloop_stop
-//  if (loop->status == HLOOP_STATUS_STOP) {
-//    return 0;
-//  }
-//
+  if (loop->status == EVENT_LOOP_STATUS_STOP) {
+    return 0;
+  }
+
 //  process_timers:
 //  if (loop->ntimers) {
 //    ntimers = hloop_process_timers(loop);
@@ -110,11 +141,11 @@ static int e_loop_process_events(e_loop_t* loop) {
 //      nidles= hloop_process_idles(loop);
 //    }
 //  }
-//  int ncbs = hloop_process_pendings(loop);
+  int ncbs = e_loop_process_pendings(loop);
 //  // printd("blocktime=%d nios=%d/%u ntimers=%d/%u nidles=%d/%u nactives=%d npendings=%d ncbs=%d\n",
 //  //         blocktime, nios, loop->nios, ntimers, loop->ntimers, nidles, loop->nidles,
 //  //         loop->nactives, npendings, ncbs);
-//  return ncbs;
+  return ncbs;
 }
 
 static void e_loop_init(e_loop_t *loop) {

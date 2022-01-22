@@ -4,10 +4,13 @@
 #include "event/e_loop.h"
 #include "stdatomic.h"
 
+void accept_tcp(e_io_t *io) {
+  printf("accept_tcp");
+}
+
 int main(int argc, char **argv) {
-  e_loop_t* loop = e_loop_new(0);
-  atomic_long a = ATOMIC_VAR_INIT(0L);
-  atomic_fetch_add(&a,1L);
-  _Atomic long counter = ATOMIC_VAR_INIT(0L);
+  e_loop_t *loop = e_loop_new(0);
+  e_loop_create_tcp_server(loop, "0.0.0.0", 8080, accept_tcp);
+  e_loop_run(loop);
   return 0;
 }

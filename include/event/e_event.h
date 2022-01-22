@@ -20,10 +20,9 @@
 #define EVENT_READ_INDEX  0
 #define EVENT_WRITE_INDEX 1
 
-#ifndef EVENT_INFINITE
-#define EVENT_INFINITE    (uint32_t)-1
+#ifndef EVENT_TIME_INFINITE
+#define EVENT_TIME_INFINITE    -1
 #endif
-
 
 #define EVENT_LOWEST_PRIORITY    (-5)
 #define EVENT_LOW_PRIORITY       (-3)
@@ -82,6 +81,12 @@ uint64_t e_event_next_id();
         ev->loop->nactives++;\
     }
 
+#define EVENT_INACTIVE(ev) \
+    if (ev->active) {\
+        ev->active = 0;\
+        ev->loop->nactives--;\
+    }\
+
 #define EVENT_ADD(loop, ev, cb) \
     do {\
         ev->loop = loop;\
@@ -91,6 +96,14 @@ uint64_t e_event_next_id();
     } while(0)
 
 #endif
+
+#define EVENT_DEL(ev) \
+    do {\
+        EVENT_INACTIVE(ev);\
+        if (!ev->pending) {\
+            EVENT_FREE(ev);\
+        }\
+    } while(0)
 
 #define EVENT_PENDING(ev) \
     do {\
