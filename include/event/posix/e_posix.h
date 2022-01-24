@@ -7,6 +7,7 @@
 #include <arpa/inet.h> // inet_pton
 #include <netdb.h> // gethostbyname
 
+#include "e_fcntl.h"
 #include "e_unistd.h"
 #include "e_pthread.h"
 

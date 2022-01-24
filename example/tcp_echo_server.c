@@ -5,7 +5,7 @@
 #include "stdatomic.h"
 
 void accept_tcp(e_io_t *io) {
-  printf("accept_tcp");
+  printfd("accept_tcp ------------------------- \n");
 }
 
 int main(int argc, char **argv) {

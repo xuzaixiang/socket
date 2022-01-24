@@ -2,6 +2,7 @@
 
 #include "event/e_loop.h"
 #include "util/e_math.h"
+#include "e_socket.h"
 
 void e_io_init(e_io_t *io) {
   // alloc localaddr,peeraddr when hio_socket_init
@@ -27,6 +28,8 @@ void e_io_ready(e_io_t *io) {
 #if defined(EVENT_OS_MAC)
   io->event_index[0] = io->event_index[1] = -1;
 #endif
+
+  e_socket_init(io);
 }
 
 e_io_t *e_io_get(e_loop_t *loop, int fd) {

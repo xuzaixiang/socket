@@ -2,7 +2,7 @@
 // Created by 20123460 on 2022/1/19.
 //
 #include "event/e_io.h"
-#include "event/e_socket.h"
+#include "e_socket.h"
 
 static void __accept_cb(e_io_t *io) {
   e_io_accept_cb(io);
@@ -13,34 +13,34 @@ static void nio_read(e_io_t *io) {
   void *buf;
   int len = 0, nread = 0, err = 0;
   read:
-  buf = io->readbuf.base + io->readbuf.tail;
-  if (io->read_flags & HIO_READ_UNTIL_LENGTH) {
-    len = io->read_until_length - (io->readbuf.tail - io->readbuf.head);
-  } else {
-    len = io->readbuf.len - io->readbuf.tail;
-  }
-  assert(len > 0);
-  nread = __nio_read(io, buf, len);
-  // printd("read retval=%d\n", nread);
-  if (nread < 0) {
-    err = e_socket_errno();
-    if (err == EAGAIN) {
-      // goto read_done;
-      return;
-    } else if (err == EMSGSIZE) {
-      // ignore
-      return;
-    } else {
-      // perror("read");
-      io->error = err;
-      goto read_error;
-    }
-  }
-  if (nread == 0) {
-    goto disconnect;
-  }
-  io->readbuf.tail += nread;
-  __read_cb(io, buf, nread);
+//  buf = io->readbuf.base + io->readbuf.tail;
+//  if (io->read_flags & HIO_READ_UNTIL_LENGTH) {
+//    len = io->read_until_length - (io->readbuf.tail - io->readbuf.head);
+//  } else {
+//    len = io->readbuf.len - io->readbuf.tail;
+//  }
+//  assert(len > 0);
+//  nread = __nio_read(io, buf, len);
+//  // printd("read retval=%d\n", nread);
+//  if (nread < 0) {
+//    err = e_socket_errno();
+//    if (err == EAGAIN) {
+//      // goto read_done;
+//      return;
+//    } else if (err == EMSGSIZE) {
+//      // ignore
+//      return;
+//    } else {
+//      // perror("read");
+//      io->error = err;
+//      goto read_error;
+//    }
+//  }
+//  if (nread == 0) {
+//    goto disconnect;
+//  }
+//  io->readbuf.tail += nread;
+//  __read_cb(io, buf, nread);
   // if (nread == len) goto read;
   return;
   read_error:

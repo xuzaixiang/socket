@@ -14,4 +14,7 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
                         e_io_side_t side DEFAULT(EVENT_IO_SERVER_SIDE));
 int e_socket_errno();
 
+void e_socket_init(e_io_t* io);
+e_io_type_t e_socket_type(int fd);
+
 #endif //EVENT_SOCKET_H
