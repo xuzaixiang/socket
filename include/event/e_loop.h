@@ -47,8 +47,10 @@ typedef struct e_loop_s {
 
 EVENT_EXPORT e_loop_t *e_loop_new(uint32_t flags DEFAULT(EVENT_LOOP_FLAG_AUTO_FREE));
 EVENT_EXPORT int e_loop_run(e_loop_t *loop);
+EVENT_EXPORT void e_loop_free(e_loop_t **pp);
 
 // server
 EVENT_EXPORT e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);
+EVENT_EXPORT e_io_t *e_loop_create_udp_server(e_loop_t *loop, const char *host, int port);
 
 #endif //EVENT_LOOP_H

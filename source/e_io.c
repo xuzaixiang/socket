@@ -76,15 +76,3 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   }
   return 0;
 }
-void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen) {
-  if (io->localaddr == NULL) {
-    EVENT_ALLOC(io->localaddr, sizeof(e_sockaddr_t));
-  }
-  memcpy(io->localaddr, addr, addrlen);
-}
-void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen) {
-  if (io->peeraddr == NULL) {
-    EVENT_ALLOC(io->peeraddr, sizeof(e_sockaddr_t));
-  }
-  memcpy(io->peeraddr, addr, addrlen);
-}

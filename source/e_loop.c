@@ -4,8 +4,7 @@
 
 #include "event/e_loop.h"
 
-
-static void e_loop_cleanup(e_loop_t* loop) {
+static void e_loop_cleanup(e_loop_t *loop) {
   // pendings
 //  printd("cleanup pendings...\n");
 //  for (int i = 0; i < HEVENT_PRIORITY_SIZE; ++i) {
@@ -61,7 +60,7 @@ static void e_loop_cleanup(e_loop_t* loop) {
 //  hmutex_destroy(&loop->custom_events_mutex);
 }
 
-static int e_loop_process_ios(e_loop_t* loop, int timeout) {
+static int e_loop_process_ios(e_loop_t *loop, int timeout) {
   // That is to call IO multiplexing function such as select, poll, epoll, etc.
   int nevents = iowatcher_poll_events(loop, timeout);
   if (nevents < 0) {
@@ -70,15 +69,14 @@ static int e_loop_process_ios(e_loop_t* loop, int timeout) {
   return nevents < 0 ? 0 : nevents;
 }
 
-
-static int e_loop_process_pendings(e_loop_t* loop) {
+static int e_loop_process_pendings(e_loop_t *loop) {
   if (loop->npendings == 0) return 0;
 
-  e_event_t* cur = NULL;
-  e_event_t* next = NULL;
+  e_event_t *cur = NULL;
+  e_event_t *next = NULL;
   int ncbs = 0;
   // NOTE: invoke event callback from high to low sorted by priority.
-  for (int i = EVENT_PRIORITY_SIZE-1; i >= 0; --i) {
+  for (int i = EVENT_PRIORITY_SIZE - 1; i >= 0; --i) {
     cur = loop->pendings[i];
     while (cur) {
       next = cur->pending_next;
@@ -102,7 +100,7 @@ static int e_loop_process_pendings(e_loop_t* loop) {
 }
 
 // hloop_process_ios -> hloop_process_timers -> hloop_process_idles -> hloop_process_pendings
-static int e_loop_process_events(e_loop_t* loop) {
+static int e_loop_process_events(e_loop_t *loop) {
   // ios -> timers -> idles
   int nios, ntimers, nidles;
   nios = ntimers = nidles = 0;
@@ -200,4 +198,12 @@ int e_loop_run(e_loop_t *loop) {
     EVENT_FREE(loop);
   }
   return 0;
+}
+
+void e_loop_free(e_loop_t **pp) {
+  if (pp && *pp) {
+    e_loop_cleanup(*pp);
+    EVENT_FREE(*pp);
+    *pp = NULL;
+  }
 }

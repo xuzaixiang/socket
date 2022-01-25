@@ -160,3 +160,17 @@ void e_io_accept_cb(e_io_t *io) {
 int e_io_close(e_io_t *io) {
 
 }
+
+int e_io_read(e_io_t *io){
+  if (io->closed) {
+//    hloge("hio_read called but fd[%d] already closed!", io->fd);
+    return -1;
+  }
+  e_io_add(io, e_io_handle_events, EVENT_READ);
+//  if (io->readbuf.tail > io->readbuf.head &&
+//      io->unpack_setting == NULL &&
+//      io->read_flags == 0) {
+//    hio_read_remain(io);
+//  }
+  return 0;
+}

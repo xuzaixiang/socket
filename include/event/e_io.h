@@ -6,8 +6,10 @@
 #include "e_sockaddr.h"
 
 typedef struct e_io_s e_io_t;
-typedef void (*e_accept_cb)(e_io_t *io);
+// callback
 typedef void (*e_io_cb)(e_io_t *io);
+typedef void (*e_accept_cb)(e_io_t *io);
+typedef void (*e_read_cb)(e_io_t *io, void *buf, int readbytes);
 
 EVENT_QUEUE_DECL(offset_buf_t, write_queue)
 
@@ -75,6 +77,8 @@ struct e_io_s {
   };
   uint32_t small_readbytes_cnt; // for readbuf autosize
 
+  // callback
+  e_read_cb read_cb;
   e_accept_cb accept_cb;
 };
 
@@ -82,18 +86,26 @@ struct e_io_s {
 // e_io_add(io, EVENT_READ) => accept => e_accept_cb
 EVENT_EXPORT int e_io_accept(e_io_t *io);
 
-void e_io_accept_cb(e_io_t *io);
 
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
 EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
-
 EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
-
 EVENT_EXPORT int e_io_close(e_io_t *io);
+EVENT_EXPORT int e_io_read(e_io_t *io);
 
+// callback
+EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
+EVENT_EXPORT void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
+// callback - call
+void e_io_accept_cb(e_io_t *io);
+
+// field - get
+EVENT_EXPORT int e_io_fd(e_io_t *io);
+EVENT_EXPORT struct sockaddr* e_io_localaddr(e_io_t* io);
+EVENT_EXPORT struct sockaddr* e_io_peeraddr (e_io_t* io);
+// field - set
 EVENT_EXPORT void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 EVENT_EXPORT void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 
-EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
 #endif

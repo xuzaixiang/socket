@@ -11,3 +11,7 @@ target_link_libraries(test1 pthread)
 
 add_executable(example_tcp_echo_server tcp_echo_server.c)
 target_link_libraries(example_tcp_echo_server event)
+
+
+add_executable(example_udp_echo_server udp_echo_server.c)
+target_link_libraries(example_udp_echo_server event)

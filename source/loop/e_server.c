@@ -12,3 +12,6 @@ e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_a
   e_io_accept(io);
   return io;
 }
+e_io_t *e_loop_create_udp_server(e_loop_t *loop, const char *host, int port) {
+  return e_socket_create(loop, host, port, EVENT_IO_TYPE_UDP, EVENT_IO_SERVER_SIDE);
+}

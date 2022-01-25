@@ -36,5 +36,6 @@ EVENT_EXPORT socklen_t e_sockaddr_len(e_sockaddr_t* addr);
 EVENT_EXPORT void e_sockaddr_print(e_sockaddr_t *addr);
 
 #define EVENT_SOCKADDR_PRINT(addr)  e_sockaddr_print((e_sockaddr_t*)addr)
+#define EVENT_SOCKADDR_STR(addr, buf) e_sockaddr_str((e_sockaddr_t*)addr, buf, sizeof(buf))
 
 #endif //EVENT__SOCKADDR_H
