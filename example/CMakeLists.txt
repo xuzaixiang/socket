@@ -15,3 +15,6 @@ target_link_libraries(example_tcp_echo_server event)
 
 add_executable(example_udp_echo_server udp_echo_server.c)
 target_link_libraries(example_udp_echo_server event)
+
+add_executable(example_udp_echo_client udp_client_server.c)
+target_link_libraries(example_udp_echo_client event)

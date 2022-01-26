@@ -6,18 +6,18 @@
 #include "event/e_sockaddr.h"
 
 static void on_recvfrom(e_io_t* io, void* buf, int readbytes) {
-  printf("on_recvfrom fd=%d readbytes=%d\n", e_io_fd(io), readbytes);
+  printfd("on_recvfrom fd=%d readbytes=%d\n", e_io_fd(io), readbytes);
   char localaddrstr[EVENT_SOCKADDR_STRLEN] = {0};
   char peeraddrstr[EVENT_SOCKADDR_STRLEN] = {0};
-  printf("[%s] <=> [%s]\n",
+  printfd("[%s] <=> [%s]\n",
          EVENT_SOCKADDR_STR(e_io_localaddr(io), localaddrstr),
          EVENT_SOCKADDR_STR(e_io_peeraddr(io), peeraddrstr));
 
   char* str = (char*)buf;
-  printf("< %.*s", readbytes, str);
+  printfd("< %.*s", readbytes, str);
   // echo
-  printf("> %.*s", readbytes, str);
-//  e_io_write(io, buf, readbytes);
+  printfd("> %.*s", readbytes, str);
+  e_io_write(io, buf, readbytes);
 }
 
 int main() {

@@ -5,11 +5,18 @@
 #include "e_buf.h"
 #include "e_sockaddr.h"
 
+// e_io_read_flags
+#define EVENT_IO_READ_ONCE           0x1
+#define EVENT_IO_READ_UNTIL_LENGTH   0x2
+#define EVENT_IO_READ_UNTIL_DELIM    0x4
+
 typedef struct e_io_s e_io_t;
 // callback
 typedef void (*e_io_cb)(e_io_t *io);
 typedef void (*e_accept_cb)(e_io_t *io);
 typedef void (*e_read_cb)(e_io_t *io, void *buf, int readbytes);
+typedef void (*e_connect_cb)(e_io_t *io);
+typedef void (*e_write_cb)(e_io_t *io, const void *buf, int writebytes);
 
 EVENT_QUEUE_DECL(offset_buf_t, write_queue)
 
@@ -48,6 +55,9 @@ struct e_io_s {
   unsigned ready: 1;
   unsigned closed: 1;
   unsigned accept: 1;
+  unsigned connect: 1;
+  unsigned close: 1;
+  unsigned    alloced_readbuf :1; // for hio_alloc_readbuf
   // public:
   e_io_type_t io_type;
   uint32_t id; // fd cannot be used as unique identifier, so we provide an id
@@ -59,8 +69,8 @@ struct e_io_s {
   struct sockaddr *peeraddr;
 
   // write
-//  struct write_queue  write_queue;
-//  hrecursive_mutex_t  write_mutex; // lock write and write_queue
+  struct write_queue write_queue;
+  e_recursive_mutex_t write_mutex; // lock write and write_queue
   uint32_t write_bufsize;
 
 #if defined(EVENT_OS_MAC)
@@ -68,7 +78,7 @@ struct e_io_s {
 #endif
 
 // read
-//  fifo_buf_t readbuf;
+  fifo_buf_t readbuf;
   unsigned int read_flags;
   // for hio_read_until
   union {
@@ -80,12 +90,13 @@ struct e_io_s {
   // callback
   e_read_cb read_cb;
   e_accept_cb accept_cb;
+  e_connect_cb connect_cb;
+  e_write_cb write_cb;
 };
 
 // nio
 // e_io_add(io, EVENT_READ) => accept => e_accept_cb
 EVENT_EXPORT int e_io_accept(e_io_t *io);
-
 
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
 EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
@@ -93,17 +104,26 @@ EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
 EVENT_EXPORT int e_io_close(e_io_t *io);
 EVENT_EXPORT int e_io_read(e_io_t *io);
+EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
+EVENT_EXPORT int    e_io_del(e_io_t* io, int events DEFAULT(EVENT_RDWR));
+#define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
+
+void e_io_alloc_readbuf(e_io_t* io, int len);
+bool e_io_is_alloced_readbuf(e_io_t* io);
 
 // callback
 EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
 EVENT_EXPORT void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
 // callback - call
 void e_io_accept_cb(e_io_t *io);
-
+void e_io_connect_cb(e_io_t *io);
+void e_io_write_cb(e_io_t *io, const void *buf, int len);
+void e_io_handle_read(e_io_t* io, void* buf, int readbytes);
+void e_io_read_cb(e_io_t* io, void* buf, int len);
 // field - get
 EVENT_EXPORT int e_io_fd(e_io_t *io);
-EVENT_EXPORT struct sockaddr* e_io_localaddr(e_io_t* io);
-EVENT_EXPORT struct sockaddr* e_io_peeraddr (e_io_t* io);
+EVENT_EXPORT struct sockaddr *e_io_localaddr(e_io_t *io);
+EVENT_EXPORT struct sockaddr *e_io_peeraddr(e_io_t *io);
 // field - set
 EVENT_EXPORT void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
 EVENT_EXPORT void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);

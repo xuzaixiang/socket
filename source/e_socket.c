@@ -54,7 +54,7 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
   }
   int sockfd = socket(addr.sa.sa_family, sock_type, 0);
   if (sockfd < 0) {
-    perror("socket");
+    perror("socket() falied");
     return NULL;
   }
   e_io_t *io = NULL;

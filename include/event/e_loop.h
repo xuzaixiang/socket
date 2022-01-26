@@ -38,6 +38,8 @@ typedef struct e_loop_s {
   // pendings: with priority as array.index
   e_event_t *pendings[EVENT_PRIORITY_SIZE];
 
+  // one loop per thread, so one readbuf per loop is OK.
+  e_buf_t                      readbuf;
   void *iowatcher;
 } e_loop_t;
 
@@ -52,5 +54,5 @@ EVENT_EXPORT void e_loop_free(e_loop_t **pp);
 // server
 EVENT_EXPORT e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);
 EVENT_EXPORT e_io_t *e_loop_create_udp_server(e_loop_t *loop, const char *host, int port);
-
+EVENT_EXPORT e_io_t* e_loop_create_udp_client (e_loop_t* loop, const char* host, int port);
 #endif //EVENT_LOOP_H
