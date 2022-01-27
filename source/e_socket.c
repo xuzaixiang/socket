@@ -54,7 +54,7 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
   }
   int sockfd = socket(addr.sa.sa_family, sock_type, 0);
   if (sockfd < 0) {
-    perror("socket() falied");
+    perror("socket() failed");
     return NULL;
   }
   e_io_t *io = NULL;
@@ -63,7 +63,7 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
     // NOTE: SO_REUSEADDR allow to reuse sockaddr of TIME_WAIT status
     int reuseaddr = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &reuseaddr, sizeof(int)) < 0) {
-      perror("setsockopt");
+      perror("setsockopt error");
       closesocket(sockfd);
       return NULL;
     }

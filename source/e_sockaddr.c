@@ -70,7 +70,7 @@ int e_sockaddr_resolve(const char *host, e_sockaddr_t *addr) {
 #else
   struct hostent *phe = gethostbyname(host);
   if (phe == NULL) {
-    printf("unknown host %s err:%d\n", host, h_errno);
+    fprintf(stderr, "unknown host %s err:%d\n", host, h_errno);
     return -h_errno;
   }
   addr->sin.sin_family = AF_INET;
@@ -98,7 +98,8 @@ void e_sockaddr_set_port(e_sockaddr_t *addr, int port) {
 
 int e_sockaddr_set_ipport(e_sockaddr_t *addr, const char *host, int port) {
   int ret = e_sockaddr_set_ip(addr, host);
-  if (ret != 0) return ret;
+  if (ret != 0)
+    return ret;
   e_sockaddr_set_port(addr, port);
   EVENT_SOCKADDR_PRINT(addr);
   return 0;

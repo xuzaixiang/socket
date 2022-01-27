@@ -73,13 +73,15 @@ struct e_io_s {
   e_recursive_mutex_t write_mutex; // lock write and write_queue
   uint32_t write_bufsize;
 
+  // read
+  fifo_buf_t readbuf;
+  unsigned int read_flags;
+
 #if defined(EVENT_OS_MAC)
   int event_index[2]; // for poll,kqueue
 #endif
 
-// read
-  fifo_buf_t readbuf;
-  unsigned int read_flags;
+
   // for hio_read_until
   union {
     unsigned int read_until_length;
@@ -103,10 +105,13 @@ EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ)
 EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
 EVENT_EXPORT int e_io_close(e_io_t *io);
+EVENT_EXPORT int e_io_close_async(e_io_t* io);
 EVENT_EXPORT int e_io_read(e_io_t *io);
 EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
 EVENT_EXPORT int    e_io_del(e_io_t* io, int events DEFAULT(EVENT_RDWR));
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
+
+
 
 void e_io_alloc_readbuf(e_io_t* io, int len);
 bool e_io_is_alloced_readbuf(e_io_t* io);

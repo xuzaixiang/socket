@@ -51,6 +51,16 @@ EVENT_EXPORT e_loop_t *e_loop_new(uint32_t flags DEFAULT(EVENT_LOOP_FLAG_AUTO_FR
 EVENT_EXPORT int e_loop_run(e_loop_t *loop);
 EVENT_EXPORT void e_loop_free(e_loop_t **pp);
 
+/*
+ * hevent_t ev;
+ * memset(&ev, 0, sizeof(hevent_t));
+ * ev.event_type = (hevent_type_e)(HEVENT_TYPE_CUSTOM + 1);
+ * ev.cb = custom_event_cb;
+ * ev.userdata = userdata;
+ * hloop_post_event(loop, &ev);
+ */
+// NOTE: hloop_post_event is thread-safe, used to post event from other thread to loop thread.
+EVENT_EXPORT void e_loop_post_event(e_loop_t* loop, e_event_t* ev);
 // server
 EVENT_EXPORT e_io_t *e_loop_create_tcp_server(e_loop_t *loop, const char *host, int port, e_accept_cb accept_cb);
 EVENT_EXPORT e_io_t *e_loop_create_udp_server(e_loop_t *loop, const char *host, int port);

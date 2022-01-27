@@ -13,7 +13,10 @@ int main() {
     return -20;
   }
   const char *test = "test messages";
-  sendto(io->fd, test, strlen(test), 0, io->peeraddr, EVENT_SOCKADDR_LEN(io->peeraddr));
+//  sendto(io->fd, test, strlen(test), 0, io->peeraddr, EVENT_SOCKADDR_LEN(io->peeraddr));
+  e_io_write(io,test, strlen(test));
+//  recvfrom(io->fd,)
+
 //  e_io_setcb_read(io, on_recvfrom);
 //  e_io_read(io);
 //  e_loop_run(loop);

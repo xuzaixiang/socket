@@ -11,7 +11,6 @@
 static atomic_long local_alloc_count = 0;
 static atomic_long local_free_count = 0;
 
-
 long e_alloc_count() {
   return local_alloc_count;
 }
@@ -39,8 +38,10 @@ static void *local_malloc(size_t size) {
   return check_ptr(malloc(size));
 }
 static void *local_realloc(void *ptr, size_t size) {
-  if (ptr != NULL) e_atomic_inc(&local_free_count);
-  if (size > 0) e_atomic_inc(&local_alloc_count);
+  if (ptr != NULL)
+    e_atomic_inc(&local_free_count);
+  if (size > 0)
+    e_atomic_inc(&local_alloc_count);
   return check_ptr(realloc(ptr, size));
 }
 static void *local_calloc(size_t count, size_t size) {

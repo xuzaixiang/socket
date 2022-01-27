@@ -159,6 +159,10 @@ static void e_loop_init(e_loop_t *loop) {
   loop->tid = e_gettid();
   io_array_init(&loop->ios, EVENT_IO_ARRAY_INIT_SIZE);
 
+  // readbuf
+  loop->readbuf.len = EVENT_LOOP_READ_BUFSIZE;
+  EVENT_ALLOC(loop->readbuf.base, loop->readbuf.len);
+
   iowatcher_init(loop);
 }
 
@@ -206,4 +210,40 @@ void e_loop_free(e_loop_t **pp) {
     EVENT_FREE(*pp);
     *pp = NULL;
   }
+}
+
+void e_loop_post_event(e_loop_t *loop, e_event_t *ev) {
+  if (ev->loop == NULL) {
+    ev->loop = loop;
+  }
+  if (ev->event_type == 0) {
+    ev->event_type = EVENT_TYPE_CUSTOM;
+  }
+  //todo e_loop_post_event
+//  if (ev->event_id == 0) {
+//    ev->event_id = e_loop_next_event_id();
+//  }
+//
+//  int nwrite = 0;
+//  uint64_t count = 1;
+//  e_mutex_lock(&loop->custom_events_mutex);
+//  if (loop->eventfds[EVENTFDS_WRITE_INDEX] == -1) {
+//    if (e_loop_create_eventfds(loop) != 0) {
+//      goto unlock;
+//    }
+//  }
+//#if defined(OS_UNIX) && HAVE_EVENTFD
+//  nwrite = write(loop->eventfds[EVENTFDS_WRITE_INDEX], &count, sizeof(count));
+//#elif defined(OS_UNIX) && HAVE_PIPE
+//  nwrite = write(loop->eventfds[EVENTFDS_WRITE_INDEX], "e", 1);
+//#else
+//  nwrite =  send(loop->eventfds[EVENTFDS_WRITE_INDEX], "e", 1, 0);
+//#endif
+//  if (nwrite <= 0) {
+//    perror("hloop_post_event failed!");
+//    goto unlock;
+//  }
+//  event_queue_push_back(&loop->custom_events, ev);
+//  unlock:
+//  hmutex_unlock(&loop->custom_events_mutex);
 }

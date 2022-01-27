@@ -20,6 +20,7 @@ void e_io_init(e_io_t *io) {
 
 //  hrecursive_mutex_init(&io->write_mutex);
 }
+
 void e_io_ready(e_io_t *io) {
   if (io->ready) return;
   // flags
@@ -196,9 +197,11 @@ void e_io_handle_read(e_io_t* io, void* buf, int readbytes){
   }
 
 }
+
 bool e_io_is_alloced_readbuf(e_io_t* io) {
   return io->alloced_readbuf;
 }
+
 void e_io_alloc_readbuf(e_io_t* io, int len){
   if (len > EVENT_MAX_READ_BUFSIZE) {
     fprintf(stderr,"read bufsize > %u, close it!", (unsigned int)EVENT_MAX_READ_BUFSIZE);
@@ -213,4 +216,21 @@ void e_io_alloc_readbuf(e_io_t* io, int len){
   io->readbuf.len = len;
   io->alloced_readbuf = 1;
   io->small_readbytes_cnt = 0;
+}
+
+static void e_io_close_event_cb(e_event_t* ev) {
+  e_io_t* io = (e_io_t*)ev->userdata;
+  uint32_t id = (uintptr_t)ev->privdata;
+  if (io->id != id) return;
+  e_io_close(io);
+}
+
+int e_io_close_async(e_io_t* io){
+  e_event_t ev;
+  memset(&ev, 0, sizeof(ev));
+  ev.cb = e_io_close_event_cb;
+  ev.userdata = io;
+  ev.privdata = (void*)(uintptr_t)io->id;
+  e_loop_post_event(io->loop, &ev);
+  return 0;
 }

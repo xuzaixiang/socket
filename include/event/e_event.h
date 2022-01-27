@@ -3,7 +3,7 @@
 
 #include <errno.h>
 #include <stdint.h>//c99
-#include <stdbool.h>
+#include <stdbool.h>//c99
 
 #include "macro/e_platform.h"
 #include "macro/e_def.h"

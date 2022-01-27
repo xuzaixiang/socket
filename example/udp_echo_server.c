@@ -5,26 +5,26 @@
 #include <event/e_io.h>
 #include "event/e_sockaddr.h"
 
-static void on_recvfrom(e_io_t* io, void* buf, int readbytes) {
+static void on_recvfrom(e_io_t *io, void *buf, int readbytes) {
   printfd("on_recvfrom fd=%d readbytes=%d\n", e_io_fd(io), readbytes);
   char localaddrstr[EVENT_SOCKADDR_STRLEN] = {0};
   char peeraddrstr[EVENT_SOCKADDR_STRLEN] = {0};
   printfd("[%s] <=> [%s]\n",
-         EVENT_SOCKADDR_STR(e_io_localaddr(io), localaddrstr),
-         EVENT_SOCKADDR_STR(e_io_peeraddr(io), peeraddrstr));
+          EVENT_SOCKADDR_STR(e_io_localaddr(io), localaddrstr),
+          EVENT_SOCKADDR_STR(e_io_peeraddr(io), peeraddrstr));
 
-  char* str = (char*)buf;
-  printfd("< %.*s", readbytes, str);
+  char *str = (char *) buf;
+  printfd("< %.*s \n", readbytes, str);
   // echo
-  printfd("> %.*s", readbytes, str);
+//  printfd("> %.*s\n", readbytes, str);
   e_io_write(io, buf, readbytes);
 }
 
 int main() {
-  const char* host = "0.0.0.0";
+  const char *host = "0.0.0.0";
   int port = 8080;
-  e_loop_t* loop = e_loop_new(0);
-  e_io_t* io = e_loop_create_udp_server(loop, host, port);
+  e_loop_t *loop = e_loop_new(0);
+  e_io_t *io = e_loop_create_udp_server(loop, host, port);
   if (io == NULL) {
     return -20;
   }
