@@ -1,28 +1,26 @@
 //
 // Created by 20123460 on 2022/1/19.
 //
+#include "e_socket.h"
 #include "event/e_io.h"
 #include "event/e_loop.h"
-#include "e_socket.h"
 
-static void __accept_cb(e_io_t *io) {
-  e_io_accept_cb(io);
-}
+static void __accept_cb(e_io_t *io) { e_io_accept_cb(io); }
 
 static void __connect_cb(e_io_t *io) {
-//  e_io_del_connect_timer(io);
+  //  e_io_del_connect_timer(io);
   e_io_connect_cb(io);
 }
 
 static void __write_cb(e_io_t *io, const void *buf, int writebytes) {
   // printd("< %.*s\n", writebytes, buf);
-//  io->last_write_hrtime = io->loop->cur_hrtime;
+  //  io->last_write_hrtime = io->loop->cur_hrtime;
   e_io_write_cb(io, buf, writebytes);
 }
 
 static void __read_cb(e_io_t *io, void *buf, int readbytes) {
   // printd("> %.*s\n", readbytes, buf);
-//  io->last_read_hrtime = io->loop->cur_hrtime;
+  //  io->last_read_hrtime = io->loop->cur_hrtime;
   e_io_handle_read(io, buf, readbytes);
 }
 
@@ -30,7 +28,7 @@ static int __nio_read(e_io_t *io, void *buf, int len) {
   int nread = 0;
   switch (io->io_type) {
   case EVENT_IO_TYPE_SSL:
-//      nread = hssl_read(io->ssl, buf, len);
+    //      nread = hssl_read(io->ssl, buf, len);
     break;
   case EVENT_IO_TYPE_TCP:
 #ifdef OS_UNIX
@@ -44,9 +42,9 @@ static int __nio_read(e_io_t *io, void *buf, int len) {
   case EVENT_IO_TYPE_IP: {
     socklen_t addrlen = sizeof(e_sockaddr_t);
     nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
-  }
-    break;
-  default:nread = read(io->fd, buf, len);
+  } break;
+  default:
+    nread = read(io->fd, buf, len);
     break;
   }
   // hlogd("read retval=%d", nread);
@@ -57,7 +55,7 @@ static int __nio_write(e_io_t *io, const void *buf, int len) {
   int nwrite = 0;
   switch (io->io_type) {
   case EVENT_IO_TYPE_SSL:
-//      nwrite = hssl_write(io->ssl, buf, len);
+    //      nwrite = hssl_write(io->ssl, buf, len);
     break;
   case EVENT_IO_TYPE_TCP:
 #ifdef EVENT_OS_UNIX
@@ -68,9 +66,12 @@ static int __nio_write(e_io_t *io, const void *buf, int len) {
     break;
   case EVENT_IO_TYPE_UDP:
   case EVENT_IO_TYPE_KCP:
-  case EVENT_IO_TYPE_IP:nwrite = sendto(io->fd, buf, len, 0, io->peeraddr, EVENT_SOCKADDR_LEN(io->peeraddr));
+  case EVENT_IO_TYPE_IP:
+    nwrite = sendto(io->fd, buf, len, 0, io->peeraddr,
+                    EVENT_SOCKADDR_LEN(io->peeraddr));
     break;
-  default:nwrite = write(io->fd, buf, len);
+  default:
+    nwrite = write(io->fd, buf, len);
     break;
   }
   // hlogd("write retval=%d", nwrite);
@@ -90,27 +91,27 @@ static void nio_connect(e_io_t *io) {
     getsockname(io->fd, io->localaddr, &addrlen);
 
     if (io->io_type == EVENT_IO_TYPE_SSL) {
-//      if (io->ssl == NULL) {
-//        // io->ssl_ctx > g_ssl_ctx > hssl_ctx_new
-//        hssl_ctx_t ssl_ctx = NULL;
-//        if (io->ssl_ctx) {
-//          ssl_ctx = io->ssl_ctx;
-//        } else if (g_ssl_ctx) {
-//          ssl_ctx = g_ssl_ctx;
-//        } else {
-//          io->ssl_ctx = ssl_ctx = hssl_ctx_new(NULL);
-//          io->alloced_ssl_ctx = 1;
-//        }
-//        if (ssl_ctx == NULL) {
-//          goto connect_failed;
-//        }
-//        hssl_t ssl = hssl_new(ssl_ctx, io->fd);
-//        if (ssl == NULL) {
-//          goto connect_failed;
-//        }
-//        io->ssl = ssl;
-//      }
-//      ssl_client_handshake(io);
+      //      if (io->ssl == NULL) {
+      //        // io->ssl_ctx > g_ssl_ctx > hssl_ctx_new
+      //        hssl_ctx_t ssl_ctx = NULL;
+      //        if (io->ssl_ctx) {
+      //          ssl_ctx = io->ssl_ctx;
+      //        } else if (g_ssl_ctx) {
+      //          ssl_ctx = g_ssl_ctx;
+      //        } else {
+      //          io->ssl_ctx = ssl_ctx = hssl_ctx_new(NULL);
+      //          io->alloced_ssl_ctx = 1;
+      //        }
+      //        if (ssl_ctx == NULL) {
+      //          goto connect_failed;
+      //        }
+      //        hssl_t ssl = hssl_new(ssl_ctx, io->fd);
+      //        if (ssl == NULL) {
+      //          goto connect_failed;
+      //        }
+      //        io->ssl = ssl;
+      //      }
+      //      ssl_client_handshake(io);
     } else {
       // NOTE: SSL call connect_cb after handshake finished
       __connect_cb(io);
@@ -119,7 +120,7 @@ static void nio_connect(e_io_t *io) {
     return;
   }
 
-  connect_failed:
+connect_failed:
   e_io_close(io);
 }
 
@@ -127,7 +128,7 @@ static void nio_write(e_io_t *io) {
   // printd("nio_write fd=%d\n", io->fd);
   int nwrite = 0, err = 0;
   e_recursive_mutex_lock(&io->write_mutex);
-  write:
+write:
   if (write_queue_empty(&io->write_queue)) {
     e_recursive_mutex_unlock(&io->write_mutex);
     if (io->close) {
@@ -171,8 +172,8 @@ static void nio_write(e_io_t *io) {
   }
   e_recursive_mutex_unlock(&io->write_mutex);
   return;
-  write_error:
-  disconnect:
+write_error:
+disconnect:
   e_recursive_mutex_unlock(&io->write_mutex);
   e_io_close(io);
 }
@@ -181,7 +182,7 @@ static void nio_read(e_io_t *io) {
   // printd("nio_read fd=%d\n", io->fd);
   void *buf;
   int len = 0, nread = 0, err = 0;
-  read:
+read:
   buf = io->readbuf.base + io->readbuf.tail;
   if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
     len = io->read_until_length - (io->readbuf.tail - io->readbuf.head);
@@ -200,7 +201,6 @@ static void nio_read(e_io_t *io) {
       // ignore
       return;
     } else {
-      // perror("read");
       io->error = err;
       goto read_error;
     }
@@ -210,11 +210,9 @@ static void nio_read(e_io_t *io) {
   }
   io->readbuf.tail += nread;
   __read_cb(io, buf, nread);
-  if (nread == len)
-    goto read;
   return;
-  read_error:
-  disconnect:
+read_error:
+disconnect:
   e_io_close(io);
 }
 
@@ -242,35 +240,36 @@ static void nio_accept(e_io_t *io) {
     // NOTE: inherit from listenio
     connio->accept_cb = io->accept_cb;
     connio->userdata = io->userdata;
-//    if (io->unpack_setting) {
-//      e_io_set_unpack(connio, io->unpack_setting);
-//    }
-//
+    //    if (io->unpack_setting) {
+    //      e_io_set_unpack(connio, io->unpack_setting);
+    //    }
+    //
     if (io->io_type == EVENT_IO_TYPE_SSL) {
-//      if (connio->ssl == NULL) {
-//        hssl_ctx_t ssl_ctx = hssl_ctx_instance();
-//        if (ssl_ctx == NULL) {
-//          io->error = HSSL_ERROR;
-//          goto accept_error;
-//        }
-//        hssl_t ssl = hssl_new(ssl_ctx, connfd);
-//        if (ssl == NULL) {
-//          io->error = HSSL_ERROR;
-//          goto accept_error;
-//        }
-//        connio->ssl = ssl;
-//      }
-//      hio_enable_ssl(connio);
-//      ssl_server_handshake(connio);
+      //      if (connio->ssl == NULL) {
+      //        hssl_ctx_t ssl_ctx = hssl_ctx_instance();
+      //        if (ssl_ctx == NULL) {
+      //          io->error = HSSL_ERROR;
+      //          goto accept_error;
+      //        }
+      //        hssl_t ssl = hssl_new(ssl_ctx, connfd);
+      //        if (ssl == NULL) {
+      //          io->error = HSSL_ERROR;
+      //          goto accept_error;
+      //        }
+      //        connio->ssl = ssl;
+      //      }
+      //      hio_enable_ssl(connio);
+      //      ssl_server_handshake(connio);
     } else {
-//      // NOTE: SSL call accept_cb after handshake finished
+      //      // NOTE: SSL call accept_cb after handshake finished
       __accept_cb(connio);
     }
   }
   return;
 
-  accept_error:
-//  hloge("listenfd=%d accept error: %s:%d", io->fd, socket_strerror(io->error), io->error);
+accept_error:
+  //  hloge("listenfd=%d accept error: %s:%d", io->fd,
+  //  socket_strerror(io->error), io->error);
   e_io_close(io);
 }
 
@@ -287,7 +286,7 @@ static void e_io_handle_events(e_io_t *io) {
     // NOTE: del HV_WRITE, if write_queue empty
     e_recursive_mutex_lock(&io->write_mutex);
     if (write_queue_empty(&io->write_queue)) {
-      iowatcher_del_event(io->loop, io->fd, EVENT_WRITE);
+      e_iowatcher_del_event(io->loop, io->fd, EVENT_WRITE);
       io->events &= ~EVENT_WRITE;
     }
     e_recursive_mutex_unlock(&io->write_mutex);
@@ -319,7 +318,7 @@ int e_io_write(e_io_t *io, const void *buf, size_t len) {
   int nwrite = 0, err = 0;
   e_recursive_mutex_lock(&io->write_mutex);
   if (write_queue_empty(&io->write_queue)) {
-    try_write:
+  try_write:
     nwrite = __nio_write(io, buf, len);
     // printd("write retval=%d\n", nwrite);
     if (nwrite < 0) {
@@ -340,13 +339,14 @@ int e_io_write(e_io_t *io, const void *buf, size_t len) {
     if (nwrite == len) {
       goto write_done;
     }
-    enqueue:
+  enqueue:
     e_io_add(io, e_io_handle_events, EVENT_WRITE);
   }
   if (nwrite < len) {
     if (io->write_bufsize + len - nwrite > EVENT_MAX_WRITE_BUFSIZE) {
       if (io->write_bufsize > EVENT_MAX_WRITE_BUFSIZE) {
-        fprintf(stderr, "write bufsize > %u, close it!", (unsigned int) EVENT_MAX_WRITE_BUFSIZE);
+        fprintf(stderr, "write bufsize > %u, close it!",
+                (unsigned int)EVENT_MAX_WRITE_BUFSIZE);
         goto write_error;
       }
     }
@@ -355,7 +355,7 @@ int e_io_write(e_io_t *io, const void *buf, size_t len) {
     remain.offset = 0;
     // NOTE: free in nio_write
     EVENT_ALLOC(remain.base, remain.len);
-    memcpy(remain.base, ((char *) buf) + nwrite, remain.len);
+    memcpy(remain.base, ((char *)buf) + nwrite, remain.len);
     if (io->write_queue.maxsize == 0) {
       write_queue_init(&io->write_queue, 4);
     }
@@ -363,24 +363,24 @@ int e_io_write(e_io_t *io, const void *buf, size_t len) {
     io->write_bufsize += remain.len;
     if (io->write_bufsize > EVENT_WRITE_BUFSIZE_HIGH_WATER) {
       fprintf(stderr, "write len=%d enqueue %u, bufsize=%u over high water %u",
-              len, (unsigned int) (remain.len - remain.offset),
-              (unsigned int) io->write_bufsize,
-              (unsigned int) EVENT_WRITE_BUFSIZE_HIGH_WATER);
+              len, (unsigned int)(remain.len - remain.offset),
+              (unsigned int)io->write_bufsize,
+              (unsigned int)EVENT_WRITE_BUFSIZE_HIGH_WATER);
     }
   }
-  write_done:
+write_done:
   e_recursive_mutex_unlock(&io->write_mutex);
   if (nwrite > 0) {
     __write_cb(io, buf, nwrite);
   }
   return nwrite;
-  write_error:
-  disconnect:
+write_error:
+disconnect:
   e_recursive_mutex_unlock(&io->write_mutex);
   /* NOTE:
    * We usually free resources in hclose_cb,
-   * if hio_close_sync, we have to be very careful to avoid using freed resources.
-   * But if hio_close_async, we do not have to worry about this.
+   * if hio_close_sync, we have to be very careful to avoid using freed
+   * resources. But if hio_close_async, we do not have to worry about this.
    */
   e_io_close_async(io);
   return nwrite < 0 ? nwrite : -1;
@@ -391,7 +391,7 @@ int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR)) {
     return -1;
 
   if (io->events & events) {
-    iowatcher_del_event(io->loop, io->fd, events);
+    e_iowatcher_del_event(io->loop, io->fd, events);
     io->events &= ~events;
   }
   if (io->events == 0) {
@@ -408,8 +408,7 @@ int e_io_read(e_io_t *io) {
     return -1;
   }
   e_io_add(io, e_io_handle_events, EVENT_READ);
-//  if (io->readbuf.tail > io->readbuf.head &&
-//      io->unpack_setting == NULL &&
+//  if (io->readbuf.tail > io->readbuf.head && io->unpack_setting == NULL &&
 //      io->read_flags == 0) {
 //    hio_read_remain(io);
 //  }
@@ -459,7 +458,8 @@ void e_io_read_cb(e_io_t *io, void *buf, int len) {
   }
 
   // for readbuf autosize
-  if (e_io_is_alloced_readbuf(io) && io->readbuf.len > EVENT_READ_BUFSIZE_HIGH_WATER) {
+  if (e_io_is_alloced_readbuf(io) &&
+      io->readbuf.len > EVENT_READ_BUFSIZE_HIGH_WATER) {
     size_t small_size = io->readbuf.len / 2;
     if (len < small_size) {
       ++io->small_readbytes_cnt;
@@ -477,6 +477,4 @@ void e_io_write_cb(e_io_t *io, const void *buf, int len) {
   }
 }
 
-int e_io_close(e_io_t *io) {
-
-}
+int e_io_close(e_io_t *io) {}

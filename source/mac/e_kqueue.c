@@ -19,8 +19,10 @@ typedef struct kqueue_ctx_s {
   struct kevent *events;
 } kqueue_ctx_t;
 
-int iowatcher_init(e_loop_t *loop) {
-  if (loop->iowatcher) return 0;
+int e_iowatcher_init(e_loop_t *loop) {
+  if (loop->iowatcher)
+    return 0;
+  // kqueue_ctx_t
   kqueue_ctx_t *kqueue_ctx;
   EVENT_ALLOC_SIZEOF(kqueue_ctx);
   kqueue_ctx->kqfd = kqueue();
@@ -33,8 +35,9 @@ int iowatcher_init(e_loop_t *loop) {
   return 0;
 }
 
-int iowatcher_cleanup(e_loop_t *loop) {
-  if (loop->iowatcher == NULL) return 0;
+int e_iowatcher_cleanup(e_loop_t *loop) {
+  if (loop->iowatcher == NULL)
+    return 0;
   kqueue_ctx_t *kqueue_ctx = (kqueue_ctx_t *) loop->iowatcher;
   close(kqueue_ctx->kqfd);
   EVENT_FREE(kqueue_ctx->changes);
@@ -50,27 +53,28 @@ static void kqueue_ctx_resize(kqueue_ctx_t *kqueue_ctx, int size) {
   kqueue_ctx->capacity = size;
 }
 
-int iowatcher_add_event(e_loop_t *loop, int fd, int event) {
-  event = (unsigned int) event & (unsigned int) EVENT_READ
-          ? EVFILT_READ : EVFILT_WRITE;
+int e_iowatcher_add_event(e_loop_t *loop, int fd, int events) {
+  events = (unsigned int) events & (unsigned int) EVENT_READ
+           ? EVFILT_READ : EVFILT_WRITE;
   if (loop->iowatcher == NULL) {
-    iowatcher_init(loop);
+    e_iowatcher_init(loop);
   }
   kqueue_ctx_t *kqueue_ctx = (kqueue_ctx_t *) loop->iowatcher;
   e_io_t *io = loop->ios.ptr[fd];
-  int idx = io->event_index[EVENT_INDEX(event)];
-  if (idx < 0) {
-    io->event_index[EVENT_INDEX(event)] = idx = kqueue_ctx->nchanges;
+  int idx = io->event_index[EVENT_INDEX(events)];
+  if (idx < 0) {// add at the last of the kqueue_ctx events
+    io->event_index[EVENT_INDEX(events)] = idx = kqueue_ctx->nchanges;
     kqueue_ctx->nchanges++;
-    if (idx == kqueue_ctx->capacity) {
+    if (idx == kqueue_ctx->capacity) {// expand the size
       kqueue_ctx_resize(kqueue_ctx, kqueue_ctx->capacity * 2);
     }
     memset(kqueue_ctx->changes + idx, 0, sizeof(struct kevent));
     kqueue_ctx->changes[idx].ident = fd;
   }
+  // assignment
   assert(kqueue_ctx->changes[idx].ident == fd);
-  kqueue_ctx->changes[idx].filter = event;
-  kqueue_ctx->changes[idx].flags = (uint16_t)EV_ADD | (uint16_t)EV_ENABLE;
+  kqueue_ctx->changes[idx].filter = events;
+  kqueue_ctx->changes[idx].flags = (uint16_t) EV_ADD | (uint16_t) EV_ENABLE;
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 0;
@@ -78,22 +82,22 @@ int iowatcher_add_event(e_loop_t *loop, int fd, int event) {
   return 0;
 }
 
-int iowatcher_del_event(e_loop_t *loop, int fd, int event) {
-  event = (unsigned int) event & (unsigned int) EVENT_READ
-          ? EVFILT_READ : EVFILT_WRITE;
+int e_iowatcher_del_event(e_loop_t *loop, int fd, int events) {
+  events = (unsigned int) events & (unsigned int) EVENT_READ
+           ? EVFILT_READ : EVFILT_WRITE;
   kqueue_ctx_t *kqueue_ctx = (kqueue_ctx_t *) loop->iowatcher;
   if (kqueue_ctx == NULL)
     return 0;
   e_io_t *io = loop->ios.ptr[fd];
-  int idx = io->event_index[EVENT_INDEX(event)];
+  int idx = io->event_index[EVENT_INDEX(events)];
   if (idx < 0)
     return 0;
   assert(kqueue_ctx->changes[idx].ident == fd);
   kqueue_ctx->changes[idx].flags = EV_DELETE;
-  io->event_index[EVENT_INDEX(event)] = -1;
+  io->event_index[EVENT_INDEX(events)] = -1;
   int lastidx = kqueue_ctx->nchanges - 1;
-  if (idx < lastidx) {
-    // swap
+  if (idx < lastidx) { // if fd is not the last of the kqueue_ctx
+    // swap idx and lastidx
     struct kevent tmp;
     tmp = kqueue_ctx->changes[idx];
     kqueue_ctx->changes[idx] = kqueue_ctx->changes[lastidx];
@@ -111,10 +115,12 @@ int iowatcher_del_event(e_loop_t *loop, int fd, int event) {
   return 0;
 }
 
-int iowatcher_poll_events(e_loop_t *loop, int timeout) {
+int e_iowatcher_poll_events(e_loop_t *loop, int timeout) {
   kqueue_ctx_t *kqueue_ctx = (kqueue_ctx_t *) loop->iowatcher;
-  if (kqueue_ctx == NULL) return 0;
-  if (kqueue_ctx->nchanges == 0) return 0;
+  if (kqueue_ctx == NULL)
+    return 0;
+  if (kqueue_ctx->nchanges == 0)
+    return 0;
   struct timespec ts, *tp;
   if (timeout == EVENT_TIME_INFINITE) {
     tp = NULL;
@@ -126,10 +132,11 @@ int iowatcher_poll_events(e_loop_t *loop, int timeout) {
   int nkqueue =
       kevent(kqueue_ctx->kqfd, kqueue_ctx->changes, kqueue_ctx->nchanges, kqueue_ctx->events, kqueue_ctx->nchanges, tp);
   if (nkqueue < 0) {
-    perror("kevent");
+    perror("kevent < 0 \n");
     return nkqueue;
   }
-  if (nkqueue == 0) return 0;
+  if (nkqueue == 0)
+    return 0;
   int nevents = 0;
   for (int i = 0; i < nkqueue; ++i) {
     if (kqueue_ctx->events[i].flags & EV_ERROR) {
@@ -148,7 +155,8 @@ int iowatcher_poll_events(e_loop_t *loop, int timeout) {
       }
       EVENT_PENDING(io);
     }
-    if (nevents == nkqueue) break;
+    if (nevents == nkqueue)
+      break;
   }
   return nevents;
 }

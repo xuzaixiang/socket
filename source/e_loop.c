@@ -62,7 +62,7 @@ static void e_loop_cleanup(e_loop_t *loop) {
 
 static int e_loop_process_ios(e_loop_t *loop, int timeout) {
   // That is to call IO multiplexing function such as select, poll, epoll, etc.
-  int nevents = iowatcher_poll_events(loop, timeout);
+  int nevents = e_iowatcher_poll_events(loop, timeout);
   if (nevents < 0) {
 //    hlogd("poll_events error=%d", -nevents);
   }
@@ -163,7 +163,7 @@ static void e_loop_init(e_loop_t *loop) {
   loop->readbuf.len = EVENT_LOOP_READ_BUFSIZE;
   EVENT_ALLOC(loop->readbuf.base, loop->readbuf.len);
 
-  iowatcher_init(loop);
+  e_iowatcher_init(loop);
 }
 
 e_loop_t *e_loop_new(uint32_t flags) {

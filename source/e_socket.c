@@ -69,13 +69,13 @@ e_io_t *e_socket_create(e_loop_t *loop, const char *host, int port, e_io_type_t 
     }
 #endif
     if (bind(sockfd, &addr.sa, e_sockaddr_len(&addr)) < 0) {
-      perror("bind");
+      perror("bind() error \n");
       closesocket(sockfd);
       return NULL;
     }
     if (sock_type == SOCK_STREAM) {
       if (listen(sockfd, SOMAXCONN) < 0) {
-        perror("listen");
+        perror("listen() error \n");
         closesocket(sockfd);
         return NULL;
       }

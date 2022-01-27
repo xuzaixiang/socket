@@ -122,7 +122,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
     io->cb = (e_event_cb) cb;
   }
   if (!(io->events & events)) {
-    iowatcher_add_event(loop, io->fd, events);
+    e_iowatcher_add_event(loop, io->fd, events);
     io->events |= events;
   }
   return 0;

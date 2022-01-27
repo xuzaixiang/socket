@@ -57,7 +57,7 @@ struct e_io_s {
   unsigned accept: 1;
   unsigned connect: 1;
   unsigned close: 1;
-  unsigned    alloced_readbuf :1; // for hio_alloc_readbuf
+  unsigned alloced_readbuf: 1; // for hio_alloc_readbuf
   // public:
   e_io_type_t io_type;
   uint32_t id; // fd cannot be used as unique identifier, so we provide an id
@@ -80,7 +80,6 @@ struct e_io_s {
 #if defined(EVENT_OS_MAC)
   int event_index[2]; // for poll,kqueue
 #endif
-
 
   // for hio_read_until
   union {
@@ -105,16 +104,14 @@ EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ)
 EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
 EVENT_EXPORT int e_io_close(e_io_t *io);
-EVENT_EXPORT int e_io_close_async(e_io_t* io);
+EVENT_EXPORT int e_io_close_async(e_io_t *io);
 EVENT_EXPORT int e_io_read(e_io_t *io);
 EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
-EVENT_EXPORT int    e_io_del(e_io_t* io, int events DEFAULT(EVENT_RDWR));
+EVENT_EXPORT int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR));
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
 
-
-
-void e_io_alloc_readbuf(e_io_t* io, int len);
-bool e_io_is_alloced_readbuf(e_io_t* io);
+void e_io_alloc_readbuf(e_io_t *io, int len);
+bool e_io_is_alloced_readbuf(e_io_t *io);
 
 // callback
 EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
@@ -123,8 +120,8 @@ EVENT_EXPORT void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
 void e_io_accept_cb(e_io_t *io);
 void e_io_connect_cb(e_io_t *io);
 void e_io_write_cb(e_io_t *io, const void *buf, int len);
-void e_io_handle_read(e_io_t* io, void* buf, int readbytes);
-void e_io_read_cb(e_io_t* io, void* buf, int len);
+void e_io_handle_read(e_io_t *io, void *buf, int readbytes);
+void e_io_read_cb(e_io_t *io, void *buf, int len);
 // field - get
 EVENT_EXPORT int e_io_fd(e_io_t *io);
 EVENT_EXPORT struct sockaddr *e_io_localaddr(e_io_t *io);
