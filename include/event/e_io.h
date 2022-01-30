@@ -105,9 +105,9 @@ EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
 EVENT_EXPORT int e_io_close(e_io_t *io);
 EVENT_EXPORT int e_io_close_async(e_io_t *io);
-EVENT_EXPORT int e_io_read(e_io_t *io);
 EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
 EVENT_EXPORT int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR));
+EVENT_EXPORT int e_io_read(e_io_t *io);
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
 
 void e_io_alloc_readbuf(e_io_t *io, int len);

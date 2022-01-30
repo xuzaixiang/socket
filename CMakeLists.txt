@@ -23,6 +23,8 @@ set(event_source
         source/e_sockaddr.c
         source/loop/e_server.c
         source/io/e_fields.c
+        source/nio/e_nio_read.c
+        source/nio/e_nio_handle.c
         source/util/e_alloc.c
         source/util/e_string.c
         source/util/e_math.c

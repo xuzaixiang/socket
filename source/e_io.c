@@ -1,8 +1,8 @@
 #include "event/e_io.h"
 
+#include "e_socket.h"
 #include "event/e_loop.h"
 #include "util/e_math.h"
-#include "e_socket.h"
 
 void e_io_init(e_io_t *io) {
   // alloc localaddr,peeraddr when hio_socket_init
@@ -18,24 +18,25 @@ void e_io_init(e_io_t *io) {
   // write_queue init when hwrite try_write failed
   // write_queue_init(&io->write_queue, 4);
 
-//  hrecursive_mutex_init(&io->write_mutex);
+    e_recursive_mutex_init(&io->write_mutex);
 }
 
 void e_io_ready(e_io_t *io) {
-  if (io->ready) return;
+  if (io->ready)
+    return;
   // flags
   io->ready = 1;
   io->closed = 0;
-//  io->accept = io->connect = io->connectex = 0;
-//  io->recv = io->send = 0;
-//  io->recvfrom = io->sendto = 0;
+  //  io->accept = io->connect = io->connectex = 0;
+  //  io->recv = io->send = 0;
+  //  io->recvfrom = io->sendto = 0;
   io->close = 0;
   // public:
-//  io->id = hio_next_id();
-//  io->io_type = HIO_TYPE_UNKNOWN;
+  //  io->id = hio_next_id();
+  //  io->io_type = HIO_TYPE_UNKNOWN;
   io->error = 0;
   io->events = io->revents = 0;
-//  io->last_read_hrtime = io->last_write_hrtime = io->loop->cur_hrtime;
+  //  io->last_read_hrtime = io->last_write_hrtime = io->loop->cur_hrtime;
   // readbuf
   io->alloced_readbuf = 0;
   io->readbuf.base = io->loop->readbuf.base;
@@ -49,7 +50,7 @@ void e_io_ready(e_io_t *io) {
   // callbacks
   io->read_cb = NULL;
   io->write_cb = NULL;
-//  io->close_cb = NULL;
+  //  io->close_cb = NULL;
   io->accept_cb = NULL;
   io->connect_cb = NULL;
   // timers
@@ -105,10 +106,12 @@ e_io_t *e_io_get(e_loop_t *loop, int fd) {
 }
 
 int e_io_add(e_io_t *io, e_io_cb cb, int events) {
-//  printd("hio_add fd=%d io->events=%d events=%d\n", io->fd, io->events, events);
+//  printd("hio_add fd=%d io->events=%d events=%d\n", io->fd, io->events,
+//  events);
 #ifdef EVENT_OS_WIN
   // Windows iowatcher not work on stdio
-    if (io->fd < 3) return -1;
+  if (io->fd < 3)
+    return -1;
 #endif
   e_loop_t *loop = io->loop;
   if (!io->active) {
@@ -119,7 +122,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
     e_io_ready(io);
   }
   if (cb) {
-    io->cb = (e_event_cb) cb;
+    io->cb = (e_event_cb)cb;
   }
   if (!(io->events & events)) {
     e_iowatcher_add_event(loop, io->fd, events);
@@ -128,52 +131,52 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   return 0;
 }
 
-
-void e_io_handle_read(e_io_t* io, void* buf, int readbytes){
+void e_io_handle_read(e_io_t *io, void *buf, int readbytes) {
 #if WITH_KCP
   if (io->io_type == HIO_TYPE_KCP) {
-        hio_read_kcp(io, buf, readbytes);
-        return;
-    }
+    hio_read_kcp(io, buf, readbytes);
+    return;
+  }
 #endif
 
-//  if (io->unpack_setting) {
-//     hio_set_unpack
-//    hio_unpack(io, buf, readbytes);
-//  } else {
-    const unsigned char* sp = (const unsigned char*)io->readbuf.base + io->readbuf.head;
-    const unsigned char* ep = (const unsigned char*)buf + readbytes;
-    if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
-      // hio_read_until_length
-      if (ep - sp >= io->read_until_length) {
-        io->readbuf.head += io->read_until_length;
+  //  if (io->unpack_setting) {
+  //     hio_set_unpack
+  //    hio_unpack(io, buf, readbytes);
+  //  } else {
+  const unsigned char *sp =
+      (const unsigned char *)io->readbuf.base + io->readbuf.head;
+  const unsigned char *ep = (const unsigned char *)buf + readbytes;
+  if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
+    // hio_read_until_length
+    if (ep - sp >= io->read_until_length) {
+      io->readbuf.head += io->read_until_length;
+      if (io->readbuf.head == io->readbuf.tail) {
+        io->readbuf.head = io->readbuf.tail = 0;
+      }
+      io->read_flags &= ~EVENT_IO_READ_UNTIL_LENGTH;
+      e_io_read_cb(io, (void *)sp, io->read_until_length);
+    }
+  } else if (io->read_flags & EVENT_IO_READ_UNTIL_DELIM) {
+    // hio_read_until_delim
+    const unsigned char *p = (const unsigned char *)buf;
+    for (int i = 0; i < readbytes; ++i, ++p) {
+      if (*p == io->read_until_delim) {
+        int len = p - sp + 1;
+        io->readbuf.head += len;
         if (io->readbuf.head == io->readbuf.tail) {
           io->readbuf.head = io->readbuf.tail = 0;
         }
-        io->read_flags &= ~EVENT_IO_READ_UNTIL_LENGTH;
-        e_io_read_cb(io, (void*)sp, io->read_until_length);
+        io->read_flags &= ~EVENT_IO_READ_UNTIL_DELIM;
+        e_io_read_cb(io, (void *)sp, len);
+        return;
       }
-    } else if (io->read_flags & EVENT_IO_READ_UNTIL_DELIM) {
-      // hio_read_until_delim
-      const unsigned char* p = (const unsigned char*)buf;
-      for (int i = 0; i < readbytes; ++i, ++p) {
-        if (*p == io->read_until_delim) {
-          int len = p - sp + 1;
-          io->readbuf.head += len;
-          if (io->readbuf.head == io->readbuf.tail) {
-            io->readbuf.head = io->readbuf.tail = 0;
-          }
-          io->read_flags &= ~EVENT_IO_READ_UNTIL_DELIM;
-          e_io_read_cb(io, (void*)sp, len);
-          return;
-        }
-      }
-    } else {
-      // hio_read
-      io->readbuf.head = io->readbuf.tail = 0;
-      e_io_read_cb(io, (void*)sp, ep - sp);
     }
-//  }
+  } else {
+    // hio_read
+    io->readbuf.head = io->readbuf.tail = 0;
+    e_io_read_cb(io, (void *)sp, ep - sp);
+  }
+  //  }
 
   if (io->readbuf.head == io->readbuf.tail) {
     io->readbuf.head = io->readbuf.tail = 0;
@@ -185,31 +188,29 @@ void e_io_handle_read(e_io_t* io, void* buf, int readbytes){
       e_io_alloc_readbuf(io, io->readbuf.len * 2);
     } else {
       // [head, tail] => [base, tail - head]
-      memmove(io->readbuf.base, io->readbuf.base + io->readbuf.head, io->readbuf.tail - io->readbuf.head);
+      memmove(io->readbuf.base, io->readbuf.base + io->readbuf.head,
+              io->readbuf.tail - io->readbuf.head);
     }
   } else {
     size_t small_size = io->readbuf.len / 2;
-    if (io->readbuf.tail < small_size &&
-        io->small_readbytes_cnt >= 3) {
+    if (io->readbuf.tail < small_size && io->small_readbytes_cnt >= 3) {
       // scale down / 2
       e_io_alloc_readbuf(io, small_size);
     }
   }
-
 }
 
-bool e_io_is_alloced_readbuf(e_io_t* io) {
-  return io->alloced_readbuf;
-}
+bool e_io_is_alloced_readbuf(e_io_t *io) { return io->alloced_readbuf; }
 
-void e_io_alloc_readbuf(e_io_t* io, int len){
+void e_io_alloc_readbuf(e_io_t *io, int len) {
   if (len > EVENT_MAX_READ_BUFSIZE) {
-    fprintf(stderr,"read bufsize > %u, close it!", (unsigned int)EVENT_MAX_READ_BUFSIZE);
-//    e_io_close_async(io);
+    fprintf(stderr, "read bufsize > %u, close it!",
+            (unsigned int)EVENT_MAX_READ_BUFSIZE);
+    //    e_io_close_async(io);
     return;
   }
   if (e_io_is_alloced_readbuf(io)) {
-    io->readbuf.base = (char*)e_realloc(io->readbuf.base, len);
+    io->readbuf.base = (char *)e_realloc(io->readbuf.base, len);
   } else {
     EVENT_ALLOC(io->readbuf.base, len);
   }
@@ -218,19 +219,20 @@ void e_io_alloc_readbuf(e_io_t* io, int len){
   io->small_readbytes_cnt = 0;
 }
 
-static void e_io_close_event_cb(e_event_t* ev) {
-  e_io_t* io = (e_io_t*)ev->userdata;
+static void e_io_close_event_cb(e_event_t *ev) {
+  e_io_t *io = (e_io_t *)ev->userdata;
   uint32_t id = (uintptr_t)ev->privdata;
-  if (io->id != id) return;
+  if (io->id != id)
+    return;
   e_io_close(io);
 }
 
-int e_io_close_async(e_io_t* io){
+int e_io_close_async(e_io_t *io) {
   e_event_t ev;
   memset(&ev, 0, sizeof(ev));
   ev.cb = e_io_close_event_cb;
   ev.userdata = io;
-  ev.privdata = (void*)(uintptr_t)io->id;
+  ev.privdata = (void *)(uintptr_t)io->id;
   e_loop_post_event(io->loop, &ev);
   return 0;
 }
