@@ -99,6 +99,7 @@ struct e_io_s {
 // e_io_add(io, EVENT_READ) => accept => e_accept_cb
 EVENT_EXPORT int e_io_accept(e_io_t *io);
 
+
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
 EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 EVENT_EXPORT void e_io_init(e_io_t *io);
@@ -107,6 +108,7 @@ EVENT_EXPORT int e_io_close(e_io_t *io);
 EVENT_EXPORT int e_io_close_async(e_io_t *io);
 EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
 EVENT_EXPORT int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR));
+
 EVENT_EXPORT int e_io_read(e_io_t *io);
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
 
