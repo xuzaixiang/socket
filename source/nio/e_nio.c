@@ -1,33 +1,9 @@
 //
 // Created by 20123460 on 2022/1/19.
 //
-
-#include "../e_socket.h"
-#include "e_nio_handle.h"
+#include "e_nio.h"
 #include "event/e_io.h"
 #include "event/e_loop.h"
-
-int e_io_accept(e_io_t *io) {
-  io->accept = 1;
-  e_io_add(io, e_io_handle_events, EVENT_READ);
-  return 0;
-}
-
-int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR)) {
-  if (!io->active)
-    return -1;
-
-  if (io->events & events) {
-    e_iowatcher_del_event(io->loop, io->fd, events);
-    io->events &= ~events;
-  }
-  if (io->events == 0) {
-    io->loop->nios--;
-    // NOTE: not EVENT_DEL, avoid free
-    EVENT_INACTIVE(io);
-  }
-  return 0;
-}
 
 
 void e_io_accept_cb(e_io_t *io) {

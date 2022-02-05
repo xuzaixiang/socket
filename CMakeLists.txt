@@ -22,9 +22,14 @@ set(event_source
         source/e_socket.c
         source/e_sockaddr.c
         source/loop/e_server.c
-        source/io/e_fields.c
+        source/io/e_io_fields.c
+        source/io/e_io_read.c
+        source/io/e_io_del.c
         source/nio/e_nio_read.c
-        source/nio/e_nio_handle.c
+        source/io/e_io_handle.c
+        source/nio/e_nio_accept.c
+        source/nio/e_nio_connect.c
+        source/nio/e_nio_write.c
         source/util/e_alloc.c
         source/util/e_string.c
         source/util/e_math.c

@@ -18,7 +18,7 @@ void e_io_init(e_io_t *io) {
   // write_queue init when hwrite try_write failed
   // write_queue_init(&io->write_queue, 4);
 
-    e_recursive_mutex_init(&io->write_mutex);
+  e_recursive_mutex_init(&io->write_mutex);
 }
 
 void e_io_ready(e_io_t *io) {
@@ -147,7 +147,7 @@ void e_io_handle_read(e_io_t *io, void *buf, int readbytes) {
       (const unsigned char *)io->readbuf.base + io->readbuf.head;
   const unsigned char *ep = (const unsigned char *)buf + readbytes;
   if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
-    // hio_read_until_length
+    // e_io_read_until_length
     if (ep - sp >= io->read_until_length) {
       io->readbuf.head += io->read_until_length;
       if (io->readbuf.head == io->readbuf.tail) {
@@ -157,7 +157,7 @@ void e_io_handle_read(e_io_t *io, void *buf, int readbytes) {
       e_io_read_cb(io, (void *)sp, io->read_until_length);
     }
   } else if (io->read_flags & EVENT_IO_READ_UNTIL_DELIM) {
-    // hio_read_until_delim
+    // e_io_read_until_delim
     const unsigned char *p = (const unsigned char *)buf;
     for (int i = 0; i < readbytes; ++i, ++p) {
       if (*p == io->read_until_delim) {
@@ -172,7 +172,7 @@ void e_io_handle_read(e_io_t *io, void *buf, int readbytes) {
       }
     }
   } else {
-    // hio_read
+    // e_io_read
     io->readbuf.head = io->readbuf.tail = 0;
     e_io_read_cb(io, (void *)sp, ep - sp);
   }
@@ -206,7 +206,7 @@ void e_io_alloc_readbuf(e_io_t *io, int len) {
   if (len > EVENT_MAX_READ_BUFSIZE) {
     fprintf(stderr, "read bufsize > %u, close it!",
             (unsigned int)EVENT_MAX_READ_BUFSIZE);
-    //    e_io_close_async(io);
+    e_io_close_async(io);
     return;
   }
   if (e_io_is_alloced_readbuf(io)) {

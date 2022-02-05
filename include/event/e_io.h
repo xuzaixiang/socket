@@ -76,17 +76,18 @@ struct e_io_s {
   // read
   fifo_buf_t readbuf;
   unsigned int read_flags;
-
-#if defined(EVENT_OS_MAC)
-  int event_index[2]; // for poll,kqueue
-#endif
-
   // for hio_read_until
   union {
     unsigned int read_until_length;
     unsigned char read_until_delim;
   };
   uint32_t small_readbytes_cnt; // for readbuf autosize
+
+
+
+#if defined(EVENT_OS_MAC)
+  int event_index[2]; // for poll,kqueue
+#endif
 
   // callback
   e_read_cb read_cb;
