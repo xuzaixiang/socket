@@ -5,10 +5,7 @@
 #include "e_buf.h"
 #include "e_sockaddr.h"
 
-// e_io_read_flags
-#define EVENT_IO_READ_ONCE           0x1
-#define EVENT_IO_READ_UNTIL_LENGTH   0x2
-#define EVENT_IO_READ_UNTIL_DELIM    0x4
+
 
 typedef struct e_io_s e_io_t;
 // callback
@@ -50,6 +47,11 @@ typedef enum e_io_side_e {
   EVENT_IO_CLIENT_SIDE = 1,
 } e_io_side_t;
 
+// e_io_read_flags
+#define EVENT_IO_READ_ONCE           0x1
+#define EVENT_IO_READ_UNTIL_LENGTH   0x2
+#define EVENT_IO_READ_UNTIL_DELIM    0x4
+
 struct e_io_s {
   EVENT_FIELDS
   unsigned ready: 1;
@@ -76,7 +78,7 @@ struct e_io_s {
   // read
   fifo_buf_t readbuf;
   unsigned int read_flags;
-  // for hio_read_until
+  // for e_io_read_until
   union {
     unsigned int read_until_length;
     unsigned char read_until_delim;
@@ -123,7 +125,6 @@ EVENT_EXPORT void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
 void e_io_accept_cb(e_io_t *io);
 void e_io_connect_cb(e_io_t *io);
 void e_io_write_cb(e_io_t *io, const void *buf, int len);
-void e_io_handle_read(e_io_t *io, void *buf, int readbytes);
 void e_io_read_cb(e_io_t *io, void *buf, int len);
 // field - get
 EVENT_EXPORT int e_io_fd(e_io_t *io);

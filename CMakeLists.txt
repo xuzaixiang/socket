@@ -46,3 +46,4 @@ add_library(event
         ${event_source}
         )
 target_include_directories(event PRIVATE include)
+target_link_libraries(event pthread)

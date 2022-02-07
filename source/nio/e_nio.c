@@ -68,4 +68,6 @@ void e_io_write_cb(e_io_t *io, const void *buf, int len) {
   }
 }
 
-int e_io_close(e_io_t *io) {}
+int e_io_close(e_io_t *io) {
+  return 0;
+}
