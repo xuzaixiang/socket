@@ -37,14 +37,15 @@ void e_io_ready(e_io_t *io) {
   io->error = 0;
   io->events = io->revents = 0;
   //  io->last_read_hrtime = io->last_write_hrtime = io->loop->cur_hrtime;
+
   // readbuf
-  io->alloced_readbuf = 0;
-  io->readbuf.base = io->loop->readbuf.base;
   io->readbuf.len = io->loop->readbuf.len;
+  io->readbuf.base = io->loop->readbuf.base;
   io->readbuf.head = io->readbuf.tail = 0;
   io->read_flags = 0;
   io->read_until_length = 0;
   io->small_readbytes_cnt = 0;
+
   // write_queue
   io->write_bufsize = 0;
   // callbacks
@@ -122,7 +123,7 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
     e_io_ready(io);
   }
   if (cb) {
-    io->cb = (e_event_cb)cb;
+    io->cb = (e_event_cb) cb;
   }
   if (!(io->events & events)) {
     e_iowatcher_add_event(loop, io->fd, events);
@@ -131,28 +132,21 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   return 0;
 }
 
-bool e_io_is_alloced_readbuf(e_io_t *io) { return io->alloced_readbuf; }
-
 void e_io_alloc_readbuf(e_io_t *io, int len) {
   if (len > EVENT_MAX_READ_BUFSIZE) {
     fprintf(stderr, "read bufsize > %u, close it!",
-            (unsigned int)EVENT_MAX_READ_BUFSIZE);
+            (unsigned int) EVENT_MAX_READ_BUFSIZE);
     e_io_close_async(io);
     return;
   }
-  if (e_io_is_alloced_readbuf(io)) {
-    io->readbuf.base = (char *)e_realloc(io->readbuf.base, len);
-  } else {
-    EVENT_ALLOC(io->readbuf.base, len);
-  }
+  io->readbuf.base = (char *) e_realloc(io->readbuf.base, len);
   io->readbuf.len = len;
-  io->alloced_readbuf = 1;
   io->small_readbytes_cnt = 0;
 }
 
 static void e_io_close_event_cb(e_event_t *ev) {
-  e_io_t *io = (e_io_t *)ev->userdata;
-  uint32_t id = (uintptr_t)ev->privdata;
+  e_io_t *io = (e_io_t *) ev->userdata;
+  uint32_t id = (uintptr_t) ev->privdata;
   if (io->id != id)
     return;
   e_io_close(io);
@@ -163,7 +157,16 @@ int e_io_close_async(e_io_t *io) {
   memset(&ev, 0, sizeof(ev));
   ev.cb = e_io_close_event_cb;
   ev.userdata = io;
-  ev.privdata = (void *)(uintptr_t)io->id;
+  ev.privdata = (void *) (uintptr_t) io->id;
   e_loop_post_event(io->loop, &ev);
   return 0;
+}
+
+int e_io_close(e_io_t *io) {
+
+  return 0;
+}
+
+void e_io_free(e_io_t *io){
+
 }

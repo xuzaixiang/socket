@@ -5,7 +5,6 @@
 #include "event/e_io.h"
 #include "event/e_loop.h"
 
-
 void e_io_accept_cb(e_io_t *io) {
   /*
     char localaddrstr[SOCKADDR_STRLEN] = {0};
@@ -49,8 +48,7 @@ void e_io_read_cb(e_io_t *io, void *buf, int len) {
   }
 
   // for readbuf autosize
-  if (e_io_is_alloced_readbuf(io) &&
-      io->readbuf.len > EVENT_READ_BUFSIZE_HIGH_WATER) {
+  if (io->readbuf.len > EVENT_READ_BUFSIZE_HIGH_WATER) {
     size_t small_size = io->readbuf.len / 2;
     if (len < small_size) {
       ++io->small_readbytes_cnt;
@@ -68,6 +66,3 @@ void e_io_write_cb(e_io_t *io, const void *buf, int len) {
   }
 }
 
-int e_io_close(e_io_t *io) {
-  return 0;
-}

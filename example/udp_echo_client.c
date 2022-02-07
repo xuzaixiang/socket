@@ -12,9 +12,11 @@ int main() {
   if (io == NULL) {
     return -20;
   }
-  const char *test = "test messages";
+  char *test = malloc(65507);
+  memset(test,0,8193);
+  strcpy(test,"hello,udp!");
 //  sendto(io->fd, test, strlen(test), 0, io->peeraddr, EVENT_SOCKADDR_LEN(io->peeraddr));
-  e_io_write(io,test, strlen(test));
+  e_io_write(io,test, 65507);
 //  recvfrom(io->fd,)
 
 //  e_io_setcb_read(io, on_recvfrom);

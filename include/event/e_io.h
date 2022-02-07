@@ -19,26 +19,27 @@ EVENT_QUEUE_DECL(offset_buf_t, write_queue)
 
 typedef enum e_io_type_e {
   EVENT_IO_TYPE_UNKNOWN = 0,
+  // 1
   EVENT_IO_TYPE_STDIN = 0x00000001,
   EVENT_IO_TYPE_STDOUT = 0x00000002,
   EVENT_IO_TYPE_STDERR = 0x00000004,
   EVENT_IO_TYPE_STDIO = 0x0000000F,
-
+  // 2
   EVENT_IO_TYPE_FILE = 0x00000010,
-
+  // 3
   EVENT_IO_TYPE_IP = 0x00000100,
   EVENT_IO_TYPE_SOCK_RAW = 0x00000F00,
-
+  // 45
   EVENT_IO_TYPE_UDP = 0x00001000,
   EVENT_IO_TYPE_KCP = 0x00002000,
   EVENT_IO_TYPE_DTLS = 0x00010000,
   EVENT_IO_TYPE_SOCK_DGRAM = 0x000FF000,
-
+  // 67
   EVENT_IO_TYPE_TCP = 0x00100000,
   EVENT_IO_TYPE_SSL = 0x01000000,
   EVENT_IO_TYPE_TLS = EVENT_IO_TYPE_SSL,
   EVENT_IO_TYPE_SOCK_STREAM = 0x0FF00000,
-
+  // 34567
   EVENT_IO_TYPE_SOCKET = 0x0FFFFF00,
 } e_io_type_t;
 
@@ -59,7 +60,6 @@ struct e_io_s {
   unsigned accept: 1;
   unsigned connect: 1;
   unsigned close: 1;
-  unsigned alloced_readbuf: 1; // for hio_alloc_readbuf
   // public:
   e_io_type_t io_type;
   uint32_t id; // fd cannot be used as unique identifier, so we provide an id
@@ -104,9 +104,11 @@ EVENT_EXPORT int e_io_accept(e_io_t *io);
 
 
 EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
-EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
+EVENT_EXPORT void e_io_free(e_io_t *io);
+
+EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
 EVENT_EXPORT int e_io_close(e_io_t *io);
 EVENT_EXPORT int e_io_close_async(e_io_t *io);
 EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
@@ -116,7 +118,6 @@ EVENT_EXPORT int e_io_read(e_io_t *io);
 #define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
 
 void e_io_alloc_readbuf(e_io_t *io, int len);
-bool e_io_is_alloced_readbuf(e_io_t *io);
 
 // callback
 EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
