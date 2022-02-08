@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 project(event C)
+
 set(CMAKE_C_STANDARD 11)
+
 include(define.cmake)
 
 option(OPTION_EVENT_ALLOC_COUNT "count alloc !" ON)
@@ -21,10 +23,16 @@ set(event_source
         source/e_event.c
         source/e_socket.c
         source/e_sockaddr.c
+        source/e_error.c
         source/loop/e_server.c
         source/io/e_io_fields.c
         source/io/e_io_read.c
         source/io/e_io_del.c
+        source/io/e_io_add.c
+        source/io/e_io_get.c
+        source/io/e_io_readbuf.c
+        source/io/e_io_accept.c
+        source/io/e_io_unpack.c
         source/nio/e_nio_read.c
         source/io/e_io_handle.c
         source/nio/e_nio_accept.c

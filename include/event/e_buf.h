@@ -12,6 +12,7 @@
 #define EVENT_WRITE_BUFSIZE_HIGH_WATER (1U << 23) // 8M
 #define EVENT_MAX_READ_BUFSIZE (1U << 24)         // 16M
 #define EVENT_MAX_WRITE_BUFSIZE (1U << 26)        // 64M
+
 typedef struct e_buf_s {
   char *base;
   size_t len;

@@ -1,11 +1,9 @@
 #ifndef EVENT_IO_H
 #define EVENT_IO_H
 
-#include "e_event.h"
 #include "e_buf.h"
 #include "e_sockaddr.h"
-
-
+#include "e_unpack.h"
 
 typedef struct e_io_s e_io_t;
 // callback
@@ -49,17 +47,18 @@ typedef enum e_io_side_e {
 } e_io_side_t;
 
 // e_io_read_flags
-#define EVENT_IO_READ_ONCE           0x1
-#define EVENT_IO_READ_UNTIL_LENGTH   0x2
-#define EVENT_IO_READ_UNTIL_DELIM    0x4
+#define EVENT_IO_READ_ONCE 0x1
+#define EVENT_IO_READ_UNTIL_LENGTH 0x2
+#define EVENT_IO_READ_UNTIL_DELIM 0x4
 
 struct e_io_s {
   EVENT_FIELDS
-  unsigned ready: 1;
-  unsigned closed: 1;
-  unsigned accept: 1;
-  unsigned connect: 1;
-  unsigned close: 1;
+  unsigned ready : 1;
+  unsigned closed : 1;
+  unsigned accept : 1;
+  unsigned connect : 1;
+  unsigned close : 1;
+  unsigned alloced_readbuf : 1; // for e_io_alloc_readbuf
   // public:
   e_io_type_t io_type;
   uint32_t id; // fd cannot be used as unique identifier, so we provide an id
@@ -85,11 +84,12 @@ struct e_io_s {
   };
   uint32_t small_readbytes_cnt; // for readbuf autosize
 
-
-
 #if defined(EVENT_OS_MAC)
   int event_index[2]; // for poll,kqueue
 #endif
+
+  // unpack
+  unpack_setting_t *unpack_setting; // for e_io_set_unpack
 
   // callback
   e_read_cb read_cb;
@@ -102,37 +102,51 @@ struct e_io_s {
 // e_io_add(io, EVENT_READ) => accept => e_accept_cb
 EVENT_EXPORT int e_io_accept(e_io_t *io);
 
-
-EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
 EVENT_EXPORT void e_io_init(e_io_t *io);
 EVENT_EXPORT void e_io_ready(e_io_t *io);
 EVENT_EXPORT void e_io_free(e_io_t *io);
 
-EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb, int events DEFAULT(EVENT_READ));
-EVENT_EXPORT int e_io_close(e_io_t *io);
-EVENT_EXPORT int e_io_close_async(e_io_t *io);
-EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
+EVENT_EXPORT e_io_t *e_io_get(e_loop_t *loop, int fd);
+EVENT_EXPORT int e_io_add(e_io_t *io, e_io_cb cb,
+                          int events DEFAULT(EVENT_READ));
 EVENT_EXPORT int e_io_del(e_io_t *io, int events DEFAULT(EVENT_RDWR));
 
+EVENT_EXPORT int e_io_close(e_io_t *io);
+EVENT_EXPORT int e_io_close_async(e_io_t *io);
+
+EVENT_EXPORT int e_io_write(e_io_t *io, const void *buf, size_t len);
+
+// read
 EVENT_EXPORT int e_io_read(e_io_t *io);
-#define e_io_read_stop(io)  e_io_del(io, EVENT_READ)
+#define e_io_read_start(io) e_io_read(io)
+#define e_io_read_stop(io) e_io_del(io, EVENT_READ)
+EVENT_EXPORT int
+e_io_read_once(e_io_t *io); // e_io_read_start => e_read_cb => e_io_read_stop
+EVENT_EXPORT int e_io_read_until_length(e_io_t *io, unsigned int len);
+EVENT_EXPORT int e_io_read_until_delim(e_io_t *io, unsigned char delim);
+EVENT_EXPORT int e_io_read_remain(e_io_t *io);
+#define e_io_readline(io) e_io_read_until_delim(io, '\n')
+#define e_io_readstring(io) e_io_read_until_delim(io, '\0')
+#define e_io_readbytes(io, len) e_io_read_until_length(io, len)
+#define e_io_read_until(io, len) e_io_read_until_length(io, len)
 
-void e_io_alloc_readbuf(e_io_t *io, int len);
+// unpack
+EVENT_EXPORT void e_io_set_unpack(e_io_t* io, unpack_setting_t* setting);
+EVENT_EXPORT void e_io_unset_unpack(e_io_t* io);
 
-// callback
+// callback - set
 EVENT_EXPORT void e_io_setcb_accept(e_io_t *io, e_accept_cb accept_cb);
 EVENT_EXPORT void e_io_setcb_read(e_io_t *io, e_read_cb read_cb);
-// callback - call
-void e_io_accept_cb(e_io_t *io);
-void e_io_connect_cb(e_io_t *io);
-void e_io_write_cb(e_io_t *io, const void *buf, int len);
-void e_io_read_cb(e_io_t *io, void *buf, int len);
+
 // field - get
 EVENT_EXPORT int e_io_fd(e_io_t *io);
 EVENT_EXPORT struct sockaddr *e_io_localaddr(e_io_t *io);
 EVENT_EXPORT struct sockaddr *e_io_peeraddr(e_io_t *io);
+
 // field - set
-EVENT_EXPORT void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr, int addrlen);
-EVENT_EXPORT void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr, int addrlen);
+EVENT_EXPORT void e_io_set_localaddr(e_io_t *io, struct sockaddr *addr,
+                                     int addrlen);
+EVENT_EXPORT void e_io_set_peeraddr(e_io_t *io, struct sockaddr *addr,
+                                    int addrlen);
 
 #endif

@@ -36,7 +36,7 @@ void e_memcheck();
 #define printfd(...) printf(__VA_ARGS__)
 #define fprintfd(fd, msg) fprintf(fd,msg)
 #else
-#define printd(...)
+#define printfd(...)
 #define fprintfd(fd,msg)
 #endif
 

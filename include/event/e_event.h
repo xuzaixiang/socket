@@ -7,12 +7,13 @@
 
 #include "macro/e_platform.h"
 #include "macro/e_def.h"
-#include "macro/e_export.h"
 #include "util/e_alloc.h"
 #include "al/e_array.h"
 #include "al/e_queue.h"
 
+#include "e_export.h"
 #include "e_iowatcher.h"
+#include "e_error.h"
 
 #define EVENT_READ  0x0001
 #define EVENT_WRITE 0x0004
@@ -37,6 +38,7 @@
 #else
 #include "posix/e_posix.h"
 #if defined(EVENT_OS_LINUX)
+#include <endian.h>
 #elif defined(EVENT_OS_MAC)
 
 #endif

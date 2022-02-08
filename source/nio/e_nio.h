@@ -6,7 +6,7 @@
 #define EVENT_NIO_H
 
 #include "../e_socket.h"
-#include "../io/e_io_private.h"
+#include "../io/e_io_handle.h"
 #include <event/e_io.h>
 
 void e_nio_accept(e_io_t *io);

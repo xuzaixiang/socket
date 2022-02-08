@@ -2,9 +2,9 @@
 // Created by 20123460 on 2022/1/30.
 //
 #include "../e_socket.h"
+#include "../e_include.h"
 #include "e_nio.h"
 #include <event/e_io.h>
-
 
 static void nio_read_handle(e_io_t *io, void *buf, int readbytes) {
 #if WITH_KCP
@@ -14,44 +14,43 @@ static void nio_read_handle(e_io_t *io, void *buf, int readbytes) {
   }
 #endif
 
-  //  if (io->unpack_setting) {
-  //     hio_set_unpack
-  //    hio_unpack(io, buf, readbytes);
-  //  } else {
-  const unsigned char *sp =
-      (const unsigned char *)io->readbuf.base + io->readbuf.head;
-  const unsigned char *ep = (const unsigned char *)buf + readbytes;
-  if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
-    // e_io_read_until_length
-    if (ep - sp >= io->read_until_length) {
-      io->readbuf.head += io->read_until_length;
-      if (io->readbuf.head == io->readbuf.tail) {
-        io->readbuf.head = io->readbuf.tail = 0;
-      }
-      io->read_flags &= ~EVENT_IO_READ_UNTIL_LENGTH;
-      e_io_read_cb(io, (void *)sp, io->read_until_length);
-    }
-  } else if (io->read_flags & EVENT_IO_READ_UNTIL_DELIM) {
-    // e_io_read_until_delim
-    const unsigned char *p = (const unsigned char *)buf;
-    for (int i = 0; i < readbytes; ++i, ++p) {
-      if (*p == io->read_until_delim) {
-        int len = p - sp + 1;
-        io->readbuf.head += len;
+  if (io->unpack_setting) {
+    e_io_unpack(io, buf, readbytes);
+  } else {
+    const unsigned char *sp =
+        (const unsigned char *)io->readbuf.base + io->readbuf.head;
+    const unsigned char *ep = (const unsigned char *)buf + readbytes;
+    if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
+      // e_io_read_until_length
+      if (ep - sp >= io->read_until_length) {
+        io->readbuf.head += io->read_until_length;
         if (io->readbuf.head == io->readbuf.tail) {
           io->readbuf.head = io->readbuf.tail = 0;
         }
-        io->read_flags &= ~EVENT_IO_READ_UNTIL_DELIM;
-        e_io_read_cb(io, (void *)sp, len);
-        return;
+        io->read_flags &= ~EVENT_IO_READ_UNTIL_LENGTH;
+        e_io_read_cb(io, (void *)sp, io->read_until_length);
       }
+    } else if (io->read_flags & EVENT_IO_READ_UNTIL_DELIM) {
+      // e_io_read_until_delim
+      const unsigned char *p = (const unsigned char *)buf;
+      for (int i = 0; i < readbytes; ++i, ++p) {
+        if (*p == io->read_until_delim) {
+          int len = p - sp + 1;
+          io->readbuf.head += len;
+          if (io->readbuf.head == io->readbuf.tail) {
+            io->readbuf.head = io->readbuf.tail = 0;
+          }
+          io->read_flags &= ~EVENT_IO_READ_UNTIL_DELIM;
+          e_io_read_cb(io, (void *)sp, len);
+          return;
+        }
+      }
+    } else {
+      // e_io_read
+      io->readbuf.head = io->readbuf.tail = 0;
+      e_io_read_cb(io, (void *)sp, ep - sp);
     }
-  } else {
-    // e_io_read
-    io->readbuf.head = io->readbuf.tail = 0;
-    e_io_read_cb(io, (void *)sp, ep - sp);
   }
-  //  }
 
   if (io->readbuf.head == io->readbuf.tail) {
     io->readbuf.head = io->readbuf.tail = 0;
@@ -75,14 +74,12 @@ static void nio_read_handle(e_io_t *io, void *buf, int readbytes) {
   }
 }
 
-
 static void nio_read_cb(e_io_t *io, void *buf, int readbytes) {
   // printd("> %.*s\n", readbytes, buf);
   // todo
   //  io->last_read_hrtime = io->loop->cur_hrtime;
   nio_read_handle(io, buf, readbytes);
 }
-
 
 static int nio_read(e_io_t *io, void *buf, int len) {
   int nread = 0;
@@ -111,12 +108,20 @@ static int nio_read(e_io_t *io, void *buf, int len) {
   return nread;
 }
 
-
 void e_nio_read(e_io_t *io) {
-  // printd("nio_read fd=%d\n", io->fd);
   void *buf;
-  int len = 0, nread = 0, err = 0;
-read:
+  int len, nread;
+
+  //                   head               tail ----------- buf ----------|
+  //  |                 |                  |                             |
+  //  --------------------------------------------------------------------
+  //  {$link EVENT_IO_READ_UNTIL_LENGTH}
+  //  |                 |---- read until length ----------|              |
+  //  |                                    |----- len ----|              |
+  //  {$link EVENT_IO_READ_ONCE}
+  //  {$link EVENT_IO_READ_UNTIL_DELIM}
+  //  |                                    |------------ len ------------|
+
   buf = io->readbuf.base + io->readbuf.tail;
   if (io->read_flags & EVENT_IO_READ_UNTIL_LENGTH) {
     len = io->read_until_length - (io->readbuf.tail - io->readbuf.head);
@@ -127,7 +132,7 @@ read:
   nread = nio_read(io, buf, len);
   fprintf(stderr, "read retval=%d\n", nread);
   if (nread < 0) {
-    err = e_socket_errno();
+    int err = e_socket_errno();
     if (err == EAGAIN) {
       // goto read_done;
       return;
