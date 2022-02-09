@@ -1,0 +1,12 @@
+#ifndef EVENT_CONFIG_H
+#define EVENT_CONFIG_H
+
+#ifndef EVENT_HAVE_GETTID
+#define EVENT_HAVE_GETTID @HAVE_GETTID@
+#endif
+
+#ifndef EVENT_HAVE_EVENTFD
+#define EVENT_HAVE_EVENTFD @HAVE_EVENTFD@
+#endif
+
+#endif // EVENT_CONFIG_H

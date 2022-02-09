@@ -13,17 +13,18 @@
 #define END_EXTERN_C
 #endif
 
-#if defined(HV_DYNAMICLIB) || defined(HV_EXPORTS) || defined(hv_EXPORTS)
+#if defined(_MSC_VER)
+#if defined(EVENT_DYNAMIC)
 #define EVENT_EXPORT __declspec(dllexport)
 #else
 #define EVENT_EXPORT __declspec(dllimport)
 #endif
-#if defined(_MSC_VER)
-
 #elif defined(__GNUC__)
 #define EVENT_EXPORT __attribute__((visibility("default")))
 #else
 #define EVENT_EXPORT
 #endif
+
+
 
 #endif // EVENT_DEF_H

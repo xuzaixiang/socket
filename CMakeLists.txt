@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.6)
 project(socket)
 set(CMAKE_C_STANDARD 11)
 
+include(CMakeDependentOption)
 add_subdirectory(event)
+
+cmake_dependent_option(EVENT_BUILD_EXAMPLES
+        "Build examples and we are the root project" ON
+        "CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR" OFF)
 
 #include(define.cmake)
 #option(OPTION_EVENT_ALLOC_COUNT "count alloc !" ON)
@@ -10,8 +15,9 @@ add_subdirectory(event)
 #
 #option_define(${OPTION_EVENT_ALLOC_COUNT} "EVENT_ALLOC_COUNT")
 #option_define(${OPTION_EVENT_ALLOC_PRINT} "EVENT_ALLOC_PRINT")
-#
-#
+
+
+
 #if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 #    add_subdirectory(example)
 #endif ()
