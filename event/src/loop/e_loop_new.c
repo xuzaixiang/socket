@@ -5,7 +5,7 @@
 #include "../e_event.h"
 #include <event/e_loop.h>
 
-static void e_loop_init(e_loop_t *loop) {
+static int e_loop_init(e_loop_t *loop) {
 #ifdef OS_WIN
   WSAInit();
 #endif
@@ -26,13 +26,24 @@ static void e_loop_init(e_loop_t *loop) {
   // custom event
   e_mutex_init(&loop->custom_events_mutex);
   event_queue_init(&loop->custom_events, EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE);
-  EVENT_RESET_LOOP_CUSTOM_FD(loop);
+  if (e_loop_create_custom_fd(loop) < 0) {
+    return -1;
+  }
+  e_io_t * io = e_io_get(loop, e_loop_get_custom_read_fd(loop));
+  if (io == NULL)
+    return -1;
+  e_io_read(io,e_loop_handle_custom_event);
+  io->priority = EVENT_HIGH_PRIORITY;
+  return 0;
 }
 
 e_loop_t *e_loop_new(int flags) {
   e_loop_t *loop;
   EVENT_ALLOC_SIZEOF(loop);
-  e_loop_init(loop);
+  if (e_loop_init(loop) < 0) {
+    EVENT_FREE(loop);
+    return NULL;
+  }
   loop->flags |= flags;
   return loop;
 }

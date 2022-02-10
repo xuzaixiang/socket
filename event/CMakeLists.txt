@@ -7,7 +7,13 @@ add_subdirectory(config)
 set(SRC src/loop/e_loop_new.c
         src/loop/e_loop_free.c
         src/loop/e_loop_run.c
-        src/io/e_io_free.c
+        src/loop/e_custom_fd.c
+        src/io/e_io_read.c
+        src/io/e_io_add.c
+        src/io/e_io_handle.c
+        src/e_io.c
+        src/e_loop.c
+        src/e_math.c
         src/e_mutex.c
         src/e_event.c
         src/e_alloc.c

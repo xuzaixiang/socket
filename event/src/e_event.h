@@ -7,15 +7,17 @@
 
 #include "e_array.h"
 #include "e_config.h"
-#include "e_io.h"
 #include "e_iowatcher.h"
+#include "e_math.h"
 #include "e_mutex.h"
 #include "e_platform.h"
 #include "e_queue.h"
+#include "loop/e_custom_fd.h"
 #include <event/e_loop.h>
 
 #ifdef EVENT_OS_UNIX
 #include <pthread.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #ifdef EVENT_OS_LINUX
 #include <sys/syscall.h>
@@ -47,9 +49,13 @@ struct e_loop_s {
   long pid;
   long tid;
 
-  // ios: with fd as array.index
-  struct io_array ios;
-  uint32_t nios;
+  uint32_t nactives; // num of active io
+  uint32_t npendings;
+  e_event_t
+      *pendings[EVENT_PRIORITY_SIZE]; // pendings: with priority as array.index
+  struct io_array ios;                // ios: with fd as array.index
+  uint32_t nios;                      // num of io
+
   void *iowatcher;
 
   // custom_events
@@ -62,6 +68,61 @@ struct e_loop_s {
   e_mutex_t custom_events_mutex;
 };
 
-#include "e_custom_fd.h"
+struct e_io_s {
+  EVENT_FIELDS
+  unsigned ready : 1;
+  unsigned closed : 1;
+  int fd;
+  int events;
+  int revents;
+  e_read_cb read_cb;
+  e_write_cb write_cb;
+};
+
+void e_io_ready(e_io_t *io);
+void e_io_init(e_io_t *io);
+void e_io_handle(e_io_t *io);
+
+void e_loop_check_io_size(e_loop_t *loop, int fd);
+void e_loop_handle(e_loop_t *loop);
+
+#define EVENT_ACTIVE(ev)                                                       \
+  if (!ev->active) {                                                           \
+    ev->active = 1;                                                            \
+    ev->loop->nactives++;                                                      \
+  }
+
+#define EVENT_INACTIVE(ev)                                                     \
+  if (ev->active) {                                                            \
+    ev->active = 0;                                                            \
+    ev->loop->nactives--;                                                      \
+  }
+
+#define EVENT_ADD(loop, ev, cb)                                                \
+  do {                                                                         \
+    ev->loop = loop;                                                           \
+    ev->cb = (e_event_cb)cb;                                                   \
+    EVENT_ACTIVE(ev);                                                          \
+  } while (0)
+
+#define EVENT_PENDING(ev)                                                      \
+  do {                                                                         \
+    if (!ev->pending) {                                                        \
+      ev->pending = 1;                                                         \
+      ev->loop->npendings++;                                                   \
+      e_event_t **phead =                                                      \
+          &ev->loop->pendings[EVENT_PRIORITY_INDEX(ev->priority)];             \
+      ev->pending_next = *phead;                                               \
+      *phead = (e_event_t *)ev;                                                \
+    }                                                                          \
+  } while (0)
+
+#define EVENT_DEL(ev)                                                          \
+  do {                                                                         \
+    EVENT_INACTIVE(ev);                                                        \
+    if (!ev->pending) {                                                        \
+      EVENT_FREE(ev);                                                          \
+    }                                                                          \
+  } while (0)
 
 #endif // EVENT_H

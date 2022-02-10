@@ -12,5 +12,24 @@ int e_loop_run(e_loop_t *loop) {
   loop->pid = e_get_pid();
   loop->tid = e_get_tid();
 
+  while (loop->status != EVENT_LOOP_STATUS_STOP) {
+    if (loop->status == EVENT_LOOP_STATUS_PAUSE) {
+      //      hv_msleep(HLOOP_PAUSE_TIME);
+      //      hloop_update_time(loop);
+      continue;
+    }
+    if ((loop->flags & EVENT_LOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS) &&
+        loop->nactives <= 1) {
+      break;
+    }
+    e_loop_handle(loop);
+    if (loop->flags & EVENT_LOOP_FLAG_RUN_ONCE) {
+      break;
+    }
+  }
+  loop->status = EVENT_LOOP_STATUS_STOP;
+  if (loop->flags & EVENT_LOOP_FLAG_AUTO_FREE) {
+    e_loop_free(&loop);
+  }
   return 0;
 }

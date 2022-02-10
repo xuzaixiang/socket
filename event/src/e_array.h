@@ -43,8 +43,10 @@
     if (pos < 0) {                                                             \
       pos += p->size;                                                          \
     }                                                                          \
-    assert(pos >= 0 && pos < p->size);                                         \
-    return p->ptr + pos;                                                       \
+    if (pos >= 0 && pos < p->size) {                                           \
+      return p->ptr + pos;                                                     \
+    }                                                                          \
+    return NULL;                                                               \
   }                                                                            \
                                                                                \
   static inline type *atype##_front(atype *p) {                                \

@@ -18,7 +18,7 @@ static void e_loop_cleanup(e_loop_t *loop) {
 
   // custom event
   e_mutex_lock(&loop->custom_events_mutex);
-  EVENT_CLOSE_LOOP_CUSTOM_FD(loop);
+  e_loop_close_custom_fd(loop);
   event_queue_cleanup(&loop->custom_events);
   e_mutex_unlock(&loop->custom_events_mutex);
   e_mutex_destroy(&loop->custom_events_mutex);

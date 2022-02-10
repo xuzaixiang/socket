@@ -5,6 +5,7 @@
 
 int main() {
   e_loop_t *loop = e_loop_new(0);
+  e_loop_run(loop);
   e_loop_free(&loop);
   return 0;
 }
