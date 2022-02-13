@@ -13,6 +13,7 @@
 #include "e_platform.h"
 #include "e_queue.h"
 #include "loop/e_custom_fd.h"
+#include "stc_vector.h"
 #include <event/e_loop.h>
 
 #ifdef EVENT_OS_UNIX
@@ -38,7 +39,8 @@
 #endif
 
 #define EVENT_IO_ARRAY_INIT_SIZE 1024
-EVENT_ARRAY_DECL(e_io_t *, io_array)
+//EVENT_ARRAY_DECL(e_io_t *, io_array)
+STC_VECTOR(e_io_t*, io_array)
 
 #define EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE 16
 EVENT_QUEUE_DECL(e_event_t, event_queue)
@@ -55,6 +57,7 @@ struct e_loop_s {
       *pendings[EVENT_PRIORITY_SIZE]; // pendings: with priority as array.index
   struct io_array ios;                // ios: with fd as array.index
   uint32_t nios;                      // num of io
+
 
   void *iowatcher;
 
