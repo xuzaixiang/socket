@@ -4,10 +4,10 @@
 #include "e_event.h"
 
 void e_loop_check_io_size(e_loop_t *loop, int fd) {
-  if (fd >= loop->ios.maxsize) {
-    int newsize = (int)ceil2e(fd);
-    io_array_resize(&loop->ios, newsize > fd ? newsize : 2 * fd);
-  }
+//  if (fd >= loop->ios.maxsize) {
+//    int newsize = (int)ceil2e(fd);
+//    io_array_resize(&loop->ios, newsize > fd ? newsize : 2 * fd);
+//  }
 }
 
 

@@ -45,7 +45,8 @@ int e_iowatcher_add_event(e_loop_t *loop, int fd, int events) {
     e_iowatcher_init(loop);
   }
   e_epoll_ctx_t *epoll_ctx = (e_epoll_ctx_t *)loop->iowatcher;
-  e_io_t *io = loop->ios.ptr[fd];
+//  e_io_t *io = loop->ios.ptr[fd];
+  e_io_t *io = io_array_get(&loop->ios,fd);
   struct epoll_event ee;
   memset(&ee, 0, sizeof(ee));
   ee.data.fd = fd;
@@ -92,7 +93,8 @@ int e_iowatcher_poll_events(e_loop_t *loop, int timeout){
     uint32_t revents = ee->events;
     if (revents) {
       ++nevents;
-      e_io_t* io = loop->ios.ptr[fd];
+//      e_io_t* io = loop->ios.ptr[fd];
+      e_io_t* io = io_array_get(&loop->ios,fd);
       if (io) {
         if (revents & (EPOLLIN | EPOLLHUP | EPOLLERR)) {
           io->revents |= EVENT_READ;

@@ -19,7 +19,7 @@ static int e_loop_init(e_loop_t *loop) {
   loop->tid = e_get_tid();
 
   // ios
-  io_array_init(&loop->ios, EVENT_IO_ARRAY_INIT_SIZE);
+  io_array_news(&loop->ios, EVENT_IO_ARRAY_INIT_SIZE);
 
   e_iowatcher_init(loop);
 
