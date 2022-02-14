@@ -11,6 +11,7 @@
 #include <string.h> // for memset,memmove
 
 /*
+ * like c++ std::vector
  * methods:
  *
  * @effective
@@ -23,12 +24,12 @@
  * name_del,
  * name_add,
  *
- * name_new,name_news,name_newsv
+ * name_new,name_news,name_newsv,
  * name_free,
  * name_clear,
- * name_resize,name_resizev
+ * name_resize,name_resizev,
  *
- * name_get,
+ * name_get,name_set,
  * name_front,
  * name_back,
  * name_empty,
@@ -115,8 +116,10 @@
   }                                                                            \
   static inline int name##_push_back(name *p, type elem) {                     \
     if (p->size == p->capacity) {                                              \
-      if ((p->ptr = (type *)realloc(p->ptr, (p->capacity <<= 1) *              \
-                                                sizeof(type))) == NULL)        \
+      if ((p->ptr = (type *)realloc(                                           \
+               p->ptr,                                                         \
+               (p->capacity = (p->capacity == 0 ? 1 : p->capacity << 1)) *     \
+                   sizeof(type))) == NULL)                                     \
         return -1;                                                             \
     }                                                                          \
     p->ptr[p->size] = elem;                                                    \
@@ -135,11 +138,13 @@
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  static inline int name##_add(name *p, type elem, size_t pos) {               \
+  static inline int name##_add(name *p, size_t pos, type elem) {               \
     assert(pos <= p->size);                                                    \
     if (p->size == p->capacity) {                                              \
-      if ((p->ptr = (type *)realloc(p->ptr, (p->capacity <<= 1) *              \
-                                                sizeof(type))) == NULL)        \
+      if ((p->ptr = (type *)realloc(                                           \
+               p->ptr,                                                         \
+               (p->capacity = (p->capacity == 0 ? 1 : p->capacity << 1)) *     \
+                   sizeof(type))) == NULL)                                     \
         return -1;                                                             \
     }                                                                          \
     if (pos < p->size) {                                                       \
@@ -187,9 +192,9 @@
     p->ptr[pos1] = p->ptr[pos2];                                               \
     p->ptr[pos2] = temp;                                                       \
   }                                                                            \
-  static inline type name##_get(name *p, size_t pos) {                         \
+  static inline type *name##_get(name *p, size_t pos) {                        \
     assert(pos < p->size);                                                     \
-    return p->ptr[pos];                                                        \
+    return p->ptr + pos;                                                       \
   }                                                                            \
   static inline void name##_set(name *p, size_t pos, type elem) {              \
     assert(pos < p->size);                                                     \

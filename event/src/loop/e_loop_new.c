@@ -21,7 +21,12 @@ static int e_loop_init(e_loop_t *loop) {
   // ios
   io_array_news(&loop->ios, EVENT_IO_ARRAY_INIT_SIZE);
 
+  // iowatcher
   e_iowatcher_init(loop);
+
+  // loop status
+  e_mutex_init(&loop->loop_mutex);
+  e_cond_init(&loop->loop_cond);
 
   // custom event
   e_mutex_init(&loop->custom_events_mutex);
@@ -29,10 +34,11 @@ static int e_loop_init(e_loop_t *loop) {
   if (e_loop_create_custom_fd(loop) < 0) {
     return -1;
   }
-  e_io_t * io = e_io_get(loop, e_loop_get_custom_read_fd(loop));
+  /// read custom fd
+  e_io_t *io = e_io_get(loop, e_loop_get_custom_read_fd(loop));
   if (io == NULL)
     return -1;
-  e_io_read(io,e_loop_handle_custom_event);
+  e_io_read(io, e_loop_handle_custom_event);
   io->priority = EVENT_HIGH_PRIORITY;
   return 0;
 }

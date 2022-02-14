@@ -39,8 +39,8 @@
 #endif
 
 #define EVENT_IO_ARRAY_INIT_SIZE 1024
-//EVENT_ARRAY_DECL(e_io_t *, io_array)
-STC_VECTOR(e_io_t*, io_array)
+// EVENT_ARRAY_DECL(e_io_t *, io_array)
+STC_VECTOR(e_io_t *, io_array)
 
 #define EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE 16
 EVENT_QUEUE_DECL(e_event_t, event_queue)
@@ -53,11 +53,10 @@ struct e_loop_s {
 
   uint32_t nactives; // num of active io
   uint32_t npendings;
-  e_event_t
-      *pendings[EVENT_PRIORITY_SIZE]; // pendings: with priority as array.index
-  struct io_array ios;                // ios: with fd as array.index
-  uint32_t nios;                      // num of io
-
+  // pendings: with priority as array.index
+  e_event_t *pendings[EVENT_PRIORITY_SIZE];
+  struct io_array ios; // ios: with fd as array.index
+  uint32_t nios;       // num of io
 
   void *iowatcher;
 
@@ -69,6 +68,10 @@ struct e_loop_s {
 #endif
   event_queue custom_events;
   e_mutex_t custom_events_mutex;
+
+  // loop
+  e_cond_t loop_cond;
+  e_mutex_t loop_mutex;
 };
 
 struct e_io_s {
@@ -90,40 +93,40 @@ void e_loop_check_io_size(e_loop_t *loop, int fd);
 void e_loop_handle(e_loop_t *loop);
 
 #define EVENT_ACTIVE(ev)                                                       \
-  if (!ev->active) {                                                           \
-    ev->active = 1;                                                            \
-    ev->loop->nactives++;                                                      \
+  if (!(ev)->active) {                                                         \
+    (ev)->active = 1;                                                          \
+    (ev)->loop->nactives++;                                                    \
   }
 
 #define EVENT_INACTIVE(ev)                                                     \
-  if (ev->active) {                                                            \
-    ev->active = 0;                                                            \
-    ev->loop->nactives--;                                                      \
+  if ((ev)->active) {                                                          \
+    (ev)->active = 0;                                                          \
+    (ev)->loop->nactives--;                                                    \
   }
 
 #define EVENT_ADD(loop, ev, cb)                                                \
   do {                                                                         \
-    ev->loop = loop;                                                           \
-    ev->cb = (e_event_cb)cb;                                                   \
+    (ev)->loop = loop;                                                         \
+    (ev)->cb = (e_event_cb)(cb);                                               \
     EVENT_ACTIVE(ev);                                                          \
   } while (0)
 
 #define EVENT_PENDING(ev)                                                      \
   do {                                                                         \
-    if (!ev->pending) {                                                        \
-      ev->pending = 1;                                                         \
-      ev->loop->npendings++;                                                   \
+    if (!(ev)->pending) {                                                      \
+      (ev)->pending = 1;                                                       \
+      (ev)->loop->npendings++;                                                 \
       e_event_t **phead =                                                      \
-          &ev->loop->pendings[EVENT_PRIORITY_INDEX(ev->priority)];             \
-      ev->pending_next = *phead;                                               \
-      *phead = (e_event_t *)ev;                                                \
+          &(ev)->loop->pendings[EVENT_PRIORITY_INDEX((ev)->priority)];         \
+      (ev)->pending_next = *phead;                                             \
+      *phead = (e_event_t *)(ev);                                              \
     }                                                                          \
   } while (0)
 
 #define EVENT_DEL(ev)                                                          \
   do {                                                                         \
     EVENT_INACTIVE(ev);                                                        \
-    if (!ev->pending) {                                                        \
+    if (!(ev)->pending) {                                                      \
       EVENT_FREE(ev);                                                          \
     }                                                                          \
   } while (0)

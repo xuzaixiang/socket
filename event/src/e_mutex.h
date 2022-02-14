@@ -19,6 +19,13 @@
 #define e_mutex_destroy pthread_mutex_destroy
 #define e_mutex_lock pthread_mutex_lock
 #define e_mutex_unlock pthread_mutex_unlock
+
+#define e_cond_t pthread_cond_t
+#define e_cond_init(cond) pthread_cond_init(cond, NULL)
+#define e_cond_wait(cond, mutex) pthread_cond_wait(cond, mutex)
+#define e_cond_signal(cond) pthread_cond_signal(cond)
+#define e_cond_broadcast(cond) pthread_cond_broadcast(cond)
+#define e_cond_destroy(cond) pthread_cond_destroy(cond)
 #endif
 
 #endif // EVENT_MUTEX_H

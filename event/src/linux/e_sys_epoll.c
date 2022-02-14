@@ -5,7 +5,7 @@
 #include "../e_event.h"
 #include <sys/epoll.h>
 
-EVENT_ARRAY_DECL(struct epoll_event, events)
+STC_VECTOR(struct epoll_event, events)
 
 #define EVENTS_INIT_SIZE 64
 
@@ -18,13 +18,16 @@ int e_iowatcher_init(e_loop_t *loop) {
   if (loop->iowatcher)
     return 0;
   e_epoll_ctx_t *epoll_ctx;
+  // epoll_ctx
   EVENT_ALLOC_SIZEOF(epoll_ctx);
+  // epfd
   if ((epoll_ctx->epfd = epoll_create(EVENTS_INIT_SIZE)) < 0) {
     loop->iowatcher = NULL;
     EVENT_FREE(epoll_ctx);
     return -1;
   }
-  events_init(&epoll_ctx->events, EVENTS_INIT_SIZE);
+  // events
+  events_new(&epoll_ctx->events);
   loop->iowatcher = epoll_ctx;
   return 0;
 }
@@ -33,31 +36,31 @@ int e_iowatcher_cleanup(e_loop_t *loop) {
   if (loop->iowatcher == NULL)
     return 0;
   e_epoll_ctx_t *epoll_ctx = (e_epoll_ctx_t *)loop->iowatcher;
+  // epfd
   if (close(epoll_ctx->epfd) < 0) {
     return -1;
   }
-  events_cleanup(&epoll_ctx->events);
+  // events
+  events_free(&epoll_ctx->events);
+  // epoll_ctx
   EVENT_FREE(loop->iowatcher);
   return 0;
 }
 int e_iowatcher_add_event(e_loop_t *loop, int fd, int events) {
-  if (loop->iowatcher == NULL) {
-    e_iowatcher_init(loop);
-  }
+  if (loop->iowatcher == NULL && (e_iowatcher_init(loop) < 0))
+    return -1;
   e_epoll_ctx_t *epoll_ctx = (e_epoll_ctx_t *)loop->iowatcher;
-//  e_io_t *io = loop->ios.ptr[fd];
-  e_io_t *io = io_array_get(&loop->ios,fd);
+  e_io_t *io = *io_array_get(&loop->ios, fd);
+  // epoll event
   struct epoll_event ee;
   memset(&ee, 0, sizeof(ee));
   ee.data.fd = fd;
-  // pre events
   if (io->events & EVENT_READ) {
     ee.events |= EPOLLIN;
   }
   if (io->events & EVENT_WRITE) {
     ee.events |= EPOLLOUT;
   }
-  // now events
   if (events & EVENT_READ) {
     ee.events |= EPOLLIN;
   }
@@ -67,45 +70,75 @@ int e_iowatcher_add_event(e_loop_t *loop, int fd, int events) {
   int op = io->events == 0 ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
   epoll_ctl(epoll_ctx->epfd, op, fd, &ee);
   if (op == EPOLL_CTL_ADD) {
-    if (epoll_ctx->events.size == epoll_ctx->events.maxsize) {
-      events_double_resize(&epoll_ctx->events);
-    }
-    epoll_ctx->events.size++;
+    events_push_back(&epoll_ctx->events, ee);
   }
   return 0;
 }
-int e_iowatcher_poll_events(e_loop_t *loop, int timeout){
-  e_epoll_ctx_t* epoll_ctx = (e_epoll_ctx_t*)loop->iowatcher;
-  if (epoll_ctx == NULL)  return 0;
-  if (epoll_ctx->events.size == 0) return 0;
-  int nepoll = epoll_wait(epoll_ctx->epfd, epoll_ctx->events.ptr, epoll_ctx->events.size, timeout);
+
+int e_iowatcher_del_event(e_loop_t *loop, int fd, int events) {
+  e_epoll_ctx_t *epoll_ctx = (e_epoll_ctx_t *)loop->iowatcher;
+  if (epoll_ctx == NULL)
+    return -1;
+  e_io_t *io = *io_array_get(&loop->ios, fd);
+  // epoll event
+  struct epoll_event ee;
+  memset(&ee, 0, sizeof(ee));
+  ee.data.fd = fd;
+  if (io->events & EVENT_READ) {
+    ee.events |= EPOLLIN;
+  }
+  if (io->events & EVENT_WRITE) {
+    ee.events |= EPOLLOUT;
+  }
+  if (events & EVENT_READ) {
+    ee.events &= ~EPOLLIN;
+  }
+  if (events & EVENT_WRITE) {
+    ee.events &= ~EPOLLOUT;
+  }
+  int op = ee.events == 0 ? EPOLL_CTL_DEL : EPOLL_CTL_MOD;
+  epoll_ctl(epoll_ctx->epfd, op, fd, &ee);
+  if (op == EPOLL_CTL_DEL) {
+    events_pop_back(&epoll_ctx->events);
+  }
+  return 0;
+}
+
+int e_iowatcher_poll_events(e_loop_t *loop, int timeout) {
+  e_epoll_ctx_t *epoll_ctx = (e_epoll_ctx_t *)loop->iowatcher;
+  if (epoll_ctx == NULL)
+    return -1;
+  if (events_empty(&epoll_ctx->events))
+    return 0;
+  int nepoll = epoll_wait(epoll_ctx->epfd, events_data(&epoll_ctx->events),
+                          (int)events_size(&epoll_ctx->events), timeout);
   if (nepoll < 0) {
     if (errno == EINTR) {
       return 0;
     }
     return nepoll;
   }
-  if (nepoll == 0) return 0;
+  if (nepoll == 0)
+    return 0;
   int nevents = 0;
-  for (int i = 0; i < epoll_ctx->events.size; ++i) {
-    struct epoll_event* ee = epoll_ctx->events.ptr + i;
+  for (int i = 0; i < events_size(&epoll_ctx->events); ++i) {
+    struct epoll_event *ee = events_get(&epoll_ctx->events, i);
     int fd = ee->data.fd;
-    uint32_t revents = ee->events;
-    if (revents) {
+    if (ee->events) {
       ++nevents;
-//      e_io_t* io = loop->ios.ptr[fd];
-      e_io_t* io = io_array_get(&loop->ios,fd);
+      e_io_t *io = *io_array_get(&loop->ios, fd);
       if (io) {
-        if (revents & (EPOLLIN | EPOLLHUP | EPOLLERR)) {
+        if (ee->events & (EPOLLIN | EPOLLHUP | EPOLLERR)) {
           io->revents |= EVENT_READ;
         }
-        if (revents & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
+        if (ee->events & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
           io->revents |= EVENT_WRITE;
         }
         EVENT_PENDING(io);
       }
     }
-    if (nevents == nepoll) break;
+    if (nevents == nepoll)
+      break;
   }
   return nevents;
 }

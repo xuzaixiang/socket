@@ -20,9 +20,12 @@ int e_io_add(e_io_t *io, e_io_cb cb, int events) {
   if (cb) {
     io->cb = (e_event_cb)cb;
   }
+  // if io->events do not have events, iowatcher add the fd
+  // iowacher can listen read and write event for the io
   if (!(io->events & events)) {
     e_iowatcher_add_event(loop, io->fd, events);
     io->events |= events;
   }
+  //else the fd had been added in iowathcer for the events
   return 0;
 }

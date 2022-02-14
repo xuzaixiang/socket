@@ -18,19 +18,16 @@ void e_io_ready(e_io_t *io) {
 }
 
 e_io_t *e_io_get(e_loop_t *loop, int fd) {
-  //  e_loop_check_io_size(loop, fd);
-  //  e_io_t *io = loop->ios.ptr[fd];
   if (fd > io_array_capacity(&loop->ios)) {
     io_array_resize(&loop->ios, fd);
   }
-  e_io_t *io = io_array_get(&loop->ios, fd);
+  e_io_t *io = *io_array_get(&loop->ios, fd);
   if (io == NULL) {
     EVENT_ALLOC_SIZEOF(io);
     e_io_init(io);
     io->event_type = EVENT_TYPE_IO;
     io->loop = loop;
     io->fd = fd;
-//    loop->ios.ptr[fd] = io;
     io_array_set(&loop->ios,fd,io);
   }
   if (!io->ready) {

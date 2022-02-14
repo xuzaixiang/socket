@@ -14,9 +14,9 @@ int e_loop_run(e_loop_t *loop) {
 
   while (loop->status != EVENT_LOOP_STATUS_STOP) {
     if (loop->status == EVENT_LOOP_STATUS_PAUSE) {
-      //      hv_msleep(HLOOP_PAUSE_TIME);
-      //      hloop_update_time(loop);
-      continue;
+      e_mutex_lock(&loop->loop_mutex);
+      e_cond_wait(&loop->loop_cond, &loop->loop_mutex);
+      e_mutex_unlock(&loop->loop_mutex);
     }
     if ((loop->flags & EVENT_LOOP_FLAG_QUIT_WHEN_NO_ACTIVE_EVENTS) &&
         loop->nactives <= 1) {

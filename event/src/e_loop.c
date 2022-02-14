@@ -4,17 +4,16 @@
 #include "e_event.h"
 
 void e_loop_check_io_size(e_loop_t *loop, int fd) {
-//  if (fd >= loop->ios.maxsize) {
-//    int newsize = (int)ceil2e(fd);
-//    io_array_resize(&loop->ios, newsize > fd ? newsize : 2 * fd);
-//  }
+  //  if (fd >= loop->ios.maxsize) {
+  //    int newsize = (int)ceil2e(fd);
+  //    io_array_resize(&loop->ios, newsize > fd ? newsize : 2 * fd);
+  //  }
 }
-
 
 void e_loop_handle(e_loop_t *loop) {
   e_iowatcher_poll_events(loop, 0);
   if (loop->npendings == 0)
-    return ;
+    return;
 
   e_event_t *cur = NULL;
   e_event_t *next = NULL;
@@ -40,4 +39,21 @@ void e_loop_handle(e_loop_t *loop) {
     loop->pendings[i] = NULL;
   }
   loop->npendings = 0;
+}
+
+int e_loop_pause(e_loop_t *loop) {
+  if (loop->status == EVENT_LOOP_STATUS_PAUSE)
+    return 0;
+  if (loop->status == EVENT_LOOP_STATUS_STOP)
+    return -1;
+  loop->status = EVENT_LOOP_STATUS_PAUSE;
+  e_event_t ev;
+  memset(&ev, 0, sizeof(ev));
+  e_loop_post(loop, &ev);
+  return 0;
+}
+
+int e_loop_resume(e_loop_t *loop) {
+
+  return 0;
 }
