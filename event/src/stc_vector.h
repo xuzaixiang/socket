@@ -1,217 +1,181 @@
 //
-// Created by 20123460 on 2022/2/10.
+// Created by 20123460 on 2022/2/19.
 //
 
 #ifndef STC_VECTOR_H
 #define STC_VECTOR_H
 
-#include <assert.h> // for assert
-#include <stddef.h> // for size_t,NULL,
-#include <stdlib.h> // for malloc,free
-#include <string.h> // for memset,memmove
+#include <assert.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-/*
- * like c++ std::vector
- * methods:
- *
- * @effective
- * name_push_back,
- * name_pop_back,
- * name_del_nomove,(note: it will change order)
- * name_swap,
- *
- * @ineffective
- * name_del,
- * name_add,
- *
- * name_new,name_news,name_newsv,
- * name_free,
- * name_clear,
- * name_resize,name_resizev,
- *
- * name_get,name_set,
- * name_front,
- * name_back,
- * name_empty,
- * name_capacity,
- * name_data,
- * name_size,
- */
+typedef struct stc_vector_s stc_vector_t;
 
 #define STC_VECTOR(type, name)                                                 \
-  struct name {                                                                \
-    type *ptr;                                                                 \
-    size_t size;                                                               \
-    size_t capacity;                                                           \
-  };                                                                           \
-  typedef struct name name;                                                    \
-  static inline void name##_new(name *p) {                                     \
-    p->size = p->capacity = 0;                                                 \
-    p->ptr = NULL;                                                             \
+  static inline stc_vector_t *stc_vector_new_of_##name(size_t capacity) {          \
+    return stc_vector_newes(sizeof(type), capacity);                               \
   }                                                                            \
-  static inline int name##_news(name *p, size_t size) {                        \
-    assert(size > 0);                                                          \
-    size_t mem = sizeof(type) * size;                                          \
-    if ((p->ptr = (type *)malloc(mem)) == NULL)                                \
-      return -1;                                                               \
-    memset(p->ptr, 0, mem);                                                    \
-    p->size = p->capacity = size;                                              \
-    return 0;                                                                  \
+  static inline int stc_vector_push_back_of_##name(stc_vector_t *vector,       \
+                                                   type *elem) {               \
+    return stc_vector_push_back(vector, elem);                                 \
   }                                                                            \
-  static inline int name##_newsv(name *p, size_t size, type elem) {            \
-    assert(size > 0);                                                          \
-    size_t mem = sizeof(type) * size;                                          \
-    if ((p->ptr = (type *)malloc(mem)) == NULL)                                \
-      return -1;                                                               \
-    for (size_t i = 0; i < size; i++)                                          \
-      p->ptr[i] = elem;                                                        \
-    p->size = p->capacity = size;                                              \
-    return 0;                                                                  \
+  static inline int stc_vector_add_of_##name(stc_vector_t *vector,             \
+                                             size_t position, type *elem) {    \
+    return stc_vector_add(vector, position, elem);                             \
   }                                                                            \
-  static inline void name##_free(name *p) {                                    \
-    free(p->ptr);                                                              \
-    p->ptr = NULL;                                                             \
-    p->size = p->capacity = 0;                                                 \
+  static inline type stc_vector_front_of_##name(stc_vector_t *vector) {        \
+    return *(type *)stc_vector_front(vector);                                  \
   }                                                                            \
-  static inline int name##_resize(name *p, size_t size) {                      \
-    if (size > p->capacity) {                                                  \
-      if ((p->ptr = (type *)realloc(p->ptr, (p->capacity = size) *             \
-                                                sizeof(type))) == NULL)        \
-        return -1;                                                             \
-    }                                                                          \
-    if (size > p->size) {                                                      \
-      memset(p->ptr + p->size, 0, (size - p->size) * sizeof(type));            \
-    }                                                                          \
-    p->size = size;                                                            \
-    if (size < (p->capacity >> 2)) {                                           \
-      size_t c = p->capacity >> 1;                                             \
-      void *r;                                                                 \
-      if ((r = realloc(p->ptr, c * sizeof(type)))) {                           \
-        p->ptr = (type *)r;                                                    \
-        p->capacity = c;                                                       \
-      }                                                                        \
-    }                                                                          \
-    return 0;                                                                  \
+  static inline type stc_vector_back_of_##name(stc_vector_t *vector) {         \
+    return *(type *)stc_vector_back(vector);                                   \
   }                                                                            \
-  static inline int name##_resizev(name *p, size_t size, type elem) {          \
-    if (size > p->capacity) {                                                  \
-      if ((p->ptr = (type *)realloc(p->ptr, (p->capacity = size) *             \
-                                                sizeof(type))) == NULL)        \
-        return -1;                                                             \
-    }                                                                          \
-    if (size > p->size) {                                                      \
-      for (int i = p->size; i < size; i++)                                     \
-        p->ptr[i] = elem;                                                      \
-    }                                                                          \
-    p->size = size;                                                            \
-    if (size < (p->capacity >> 2)) {                                           \
-      size_t c = p->capacity >> 1;                                             \
-      void *r;                                                                 \
-      if ((r = realloc(p->ptr, c * sizeof(type)))) {                           \
-        p->ptr = (type *)r;                                                    \
-        p->capacity = c;                                                       \
-      }                                                                        \
-    }                                                                          \
-    return 0;                                                                  \
+  static inline type stc_vector_get_of_##name(stc_vector_t *vector,            \
+                                              size_t position) {               \
+    return *(type *)stc_vector_get(vector, position);                          \
   }                                                                            \
-  static inline int name##_push_back(name *p, type elem) {                     \
-    if (p->size == p->capacity) {                                              \
-      if ((p->ptr = (type *)realloc(                                           \
-               p->ptr,                                                         \
-               (p->capacity = (p->capacity == 0 ? 1 : p->capacity << 1)) *     \
-                   sizeof(type))) == NULL)                                     \
-        return -1;                                                             \
-    }                                                                          \
-    p->ptr[p->size] = elem;                                                    \
-    p->size++;                                                                 \
-    return 0;                                                                  \
+  static inline type *stc_vector_data_of_##name(stc_vector_t *vector) {        \
+    return (type *)stc_vector_data(vector);                                    \
   }                                                                            \
-  static inline void name##_pop_back(name *p) {                                \
-    assert(p->size > 0);                                                       \
-    p->size--;                                                                 \
-    if (p->size < (p->capacity >> 2)) {                                        \
-      size_t c = p->capacity >> 1;                                             \
-      void *r;                                                                 \
-      if ((r = realloc(p->ptr, c * sizeof(type)))) {                           \
-        p->ptr = (type *)r;                                                    \
-        p->capacity = c;                                                       \
-      }                                                                        \
-    }                                                                          \
-  }                                                                            \
-  static inline int name##_add(name *p, size_t pos, type elem) {               \
-    assert(pos <= p->size);                                                    \
-    if (p->size == p->capacity) {                                              \
-      if ((p->ptr = (type *)realloc(                                           \
-               p->ptr,                                                         \
-               (p->capacity = (p->capacity == 0 ? 1 : p->capacity << 1)) *     \
-                   sizeof(type))) == NULL)                                     \
-        return -1;                                                             \
-    }                                                                          \
-    if (pos < p->size) {                                                       \
-      memmove(p->ptr + pos + 1, p->ptr + pos, sizeof(type) * (p->size - pos)); \
-    }                                                                          \
-    p->ptr[pos] = elem;                                                        \
-    p->size++;                                                                 \
-    return 0;                                                                  \
-  }                                                                            \
-  static inline void name##_del(name *p, size_t pos) {                         \
-    assert(p->size > 0 && pos < p->size);                                      \
-    p->size--;                                                                 \
-    if (pos < p->size) {                                                       \
-      memmove(p->ptr + pos, p->ptr + pos + 1, sizeof(type) * (p->size - pos)); \
-    }                                                                          \
-    if (p->size < (p->capacity >> 2)) {                                        \
-      size_t c = p->capacity >> 1;                                             \
-      void *r;                                                                 \
-      if ((r = realloc(p->ptr, c * sizeof(type)))) {                           \
-        p->ptr = (type *)r;                                                    \
-        p->capacity = c;                                                       \
-      }                                                                        \
-    }                                                                          \
-  }                                                                            \
-  static inline void name##_del_nomove(name *p, size_t pos) {                  \
-    assert(p->size > 0 && pos < p->size);                                      \
-    p->size--;                                                                 \
-    if (pos < p->size) {                                                       \
-      p->ptr[pos] = p->ptr[p->size];                                           \
-    }                                                                          \
-    if (p->size < (p->capacity >> 2)) {                                        \
-      size_t c = p->capacity >> 1;                                             \
-      void *r;                                                                 \
-      if ((r = realloc(p->ptr, c * sizeof(type)))) {                           \
-        p->ptr = (type *)r;                                                    \
-        p->capacity = c;                                                       \
-      }                                                                        \
-    }                                                                          \
-  }                                                                            \
-  static inline void name##_swap(name *p, size_t pos1, size_t pos2) {          \
-    if (pos1 == pos2)                                                          \
-      return;                                                                  \
-    assert(pos1 < p->size && pos2 < p->size);                                  \
-    type temp = p->ptr[pos1];                                                  \
-    p->ptr[pos1] = p->ptr[pos2];                                               \
-    p->ptr[pos2] = temp;                                                       \
-  }                                                                            \
-  static inline type *name##_get(name *p, size_t pos) {                        \
-    assert(pos < p->size);                                                     \
-    return p->ptr + pos;                                                       \
-  }                                                                            \
-  static inline void name##_set(name *p, size_t pos, type elem) {              \
-    assert(pos < p->size);                                                     \
-    p->ptr[pos] = elem;                                                        \
-  }                                                                            \
-  static inline type name##_front(name *p) {                                   \
-    assert(p->size > 0);                                                       \
-    return *p->ptr;                                                            \
-  }                                                                            \
-  static inline type name##_back(name *p) {                                    \
-    assert(p->size > 0);                                                       \
-    return p->ptr[p->size - 1];                                                \
-  }                                                                            \
-  static inline void name##_clear(name *p) { p->size = 0; }                    \
-  static inline int name##_empty(name *p) { return p->size == 0; }             \
-  static inline size_t name##_capacity(name *p) { return p->capacity; }        \
-  static inline size_t name##_size(name *p) { return p->size; }                \
-  static inline type *name##_data(name *p) { return p->ptr; }
+  static inline void stc_vector_set_of_##name(stc_vector_t *vector,            \
+                                              size_t position, type *elem) {   \
+    stc_vector_set(vector, position, elem);                                    \
+  }
 
+
+struct stc_vector_s {
+  char *ptr;
+  size_t size;
+  size_t each;
+  size_t capacity;
+  size_t min_capacity;
+};
+
+static inline stc_vector_t *stc_vector_newes(size_t each, size_t capacity) {
+  stc_vector_t *vector;
+  if ((vector = (stc_vector_t *)calloc(sizeof(stc_vector_t), 1)) == NULL)
+    return NULL;
+  vector->each = each;
+  vector->min_capacity = capacity;
+  if (capacity > 0) {
+    if ((vector->ptr = (char *)calloc(each, capacity)) != NULL)
+      vector->capacity = capacity;
+  }
+  return vector;
+}
+static inline void stc_vector_shrink(stc_vector_t *vector) {
+  if (vector->capacity <= vector->min_capacity)
+    return;
+  if (vector->size < (vector->capacity >> 2)) {
+    size_t c = vector->capacity >> 1;
+    void *r;
+    if ((r = realloc(vector->ptr, c * vector->each))) {
+      vector->ptr = (char *)r;
+      vector->capacity = c;
+    }
+  }
+}
+static inline int stc_vector_expand(stc_vector_t *vector, size_t capacity) {
+  if (vector->size == vector->capacity) {
+    if ((vector->ptr = (char *)realloc(
+             vector->ptr, (vector->capacity = capacity) * vector->each)) ==
+        NULL)
+      return -1;
+  }
+  return 0;
+}
+static inline void stc_vector_free(stc_vector_t **vector) {
+  if (vector && *vector) {
+    free((*vector)->ptr);
+    free(*vector);
+    *vector = NULL;
+  }
+}
+static inline int stc_vector_resize(stc_vector_t *vector, size_t size) {
+  if (size > vector->capacity) {
+    if ((vector->ptr = (char *)realloc(vector->ptr, (vector->capacity = size) *
+                                                        vector->each)) == NULL)
+      return -1;
+  }
+  if (size > vector->size) {
+    memset(vector->ptr + vector->size * vector->each, 0,
+           (size - vector->size) * vector->each);
+  }
+  vector->size = size;
+  stc_vector_shrink(vector);
+  return 0;
+}
+static inline int stc_vector_add(stc_vector_t *vector, size_t position, void *type_pointer) {
+  assert(position <= vector->size);
+  if (stc_vector_expand(vector,
+                        vector->capacity == 0 ? 1 : vector->capacity << 1))
+    return -1;
+  if (position < vector->size) {
+    memmove(vector->ptr + (position + 1) * vector->each,
+            vector->ptr + position * vector->each,
+            vector->each * (vector->size - position));
+  }
+  memcpy(vector->ptr + position * vector->each, type_pointer, vector->each);
+  vector->size++;
+  return 0;
+}
+static inline int stc_vector_push_back(stc_vector_t *vector, void *type_pointer) {
+  return stc_vector_add(vector, vector->size, type_pointer);
+}
+static inline void stc_vector_del(stc_vector_t *vector, size_t position) {
+  assert(vector->size > 0 && position < vector->size);
+  vector->size--;
+  if (position < vector->size) {
+    memmove(vector->ptr + position * vector->each,
+            vector->ptr + (position + 1) * vector->each,
+            (vector->size - position) * vector->each);
+  }
+  stc_vector_shrink(vector);
+}
+
+static inline void stc_vector_del_nomove(stc_vector_t *vector, size_t position) {
+  assert(vector->size > 0 && position < vector->size);
+  if (position < vector->size) {
+    memcpy(vector->ptr + position * vector->each,
+           vector->ptr + (vector->size - 1) * vector->each, vector->each);
+  }
+  vector->size--;
+  stc_vector_shrink(vector);
+}
+static inline void stc_vector_pop_back(stc_vector_t *vector) {
+  assert(vector->size > 0);
+  stc_vector_del(vector, vector->size - 1);
+}
+static inline void stc_vector_swap(stc_vector_t *vector, size_t x, size_t y) {
+  if (x == y)
+    return;
+  assert(x < vector->size && y < vector->size);
+  void *temp = malloc(vector->each);
+  memcpy(temp, vector->ptr + x * vector->each, vector->each);
+  memcpy(vector->ptr + x * vector->each, vector->ptr + y * vector->each,
+         vector->each);
+  memcpy(vector->ptr + y * vector->each, temp, vector->each);
+  free(temp);
+}
+static inline void *stc_vector_get(stc_vector_t *vector, size_t position) {
+  assert(position < vector->size);
+  return vector->ptr + position * vector->each;
+}
+static inline void stc_vector_set(stc_vector_t *vector, size_t position, void *type_pointer) {
+  assert(position < vector->size);
+  memcpy(vector->ptr + position * vector->each, type_pointer, vector->each);
+}
+static inline void *stc_vector_front(stc_vector_t *vector) {
+  assert(vector->size > 0);
+  return vector->ptr;
+}
+static inline void *stc_vector_back(stc_vector_t *vector) {
+  assert(vector->size > 0);
+  return vector->ptr + (vector->size - 1) * vector->each;
+}
+static inline void stc_vector_clear(stc_vector_t *vector) { vector->size = 0; }
+static inline int stc_vector_empty(stc_vector_t *vector) { return vector->size == 0; }
+static inline size_t stc_vector_size(stc_vector_t *vector) { return vector->size; }
+static inline size_t stc_vector_capacity(stc_vector_t *vector) { return vector->capacity; }
+static inline void *stc_vector_data(stc_vector_t *vector) { return vector->ptr; }
 #endif // STC_VECTOR_H

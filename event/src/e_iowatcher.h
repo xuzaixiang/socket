@@ -5,6 +5,8 @@
 #ifndef EVENT_IOWATCHER_H
 #define EVENT_IOWATCHER_H
 
+#define EVENT_IOWATCHER_BLOCK_TIME_INDEFINITELY -1
+
 typedef struct e_loop_s e_loop_t;
 
 int e_iowatcher_init(e_loop_t *loop);

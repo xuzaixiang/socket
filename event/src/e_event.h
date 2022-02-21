@@ -16,6 +16,10 @@
 #include "stc_vector.h"
 #include <event/e_loop.h>
 
+#ifndef NDEBUG
+#include <stdio.h>
+#endif
+
 #ifdef EVENT_OS_UNIX
 #include <pthread.h>
 #include <sys/socket.h>
@@ -40,7 +44,7 @@
 
 #define EVENT_IO_ARRAY_INIT_SIZE 1024
 // EVENT_ARRAY_DECL(e_io_t *, io_array)
-STC_VECTOR(e_io_t *, io_array)
+STC_VECTOR(e_io_t *, io)
 
 #define EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE 16
 EVENT_QUEUE_DECL(e_event_t, event_queue)
@@ -55,7 +59,7 @@ struct e_loop_s {
   uint32_t npendings;
   // pendings: with priority as array.index
   e_event_t *pendings[EVENT_PRIORITY_SIZE];
-  struct io_array ios; // ios: with fd as array.index
+  stc_vector_t *ios; // ios: with fd as array.index
   uint32_t nios;       // num of io
 
   void *iowatcher;

@@ -11,7 +11,7 @@ void e_loop_check_io_size(e_loop_t *loop, int fd) {
 }
 
 void e_loop_handle(e_loop_t *loop) {
-  e_iowatcher_poll_events(loop, 0);
+  e_iowatcher_poll_events(loop, EVENT_IOWATCHER_BLOCK_TIME_INDEFINITELY);
   if (loop->npendings == 0)
     return;
 

@@ -6,13 +6,13 @@
 
 static void e_loop_cleanup(e_loop_t *loop) {
   // ios
-  for (int i = 0; i < io_array_size(&loop->ios); ++i) {
-    e_io_t *io = *io_array_get(&loop->ios, i);
+  for (int i = 0; i < stc_vector_size(loop->ios); ++i) {
+    e_io_t *io = stc_vector_get(loop->ios, i);
     if (io) {
       e_io_free(io);
     }
   }
-  io_array_free(&loop->ios);
+  stc_vector_free(&loop->ios);
 
   // iowatcher
   e_iowatcher_cleanup(loop);

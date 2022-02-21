@@ -18,17 +18,17 @@ void e_io_ready(e_io_t *io) {
 }
 
 e_io_t *e_io_get(e_loop_t *loop, int fd) {
-  if (fd > io_array_capacity(&loop->ios)) {
-    io_array_resize(&loop->ios, fd);
+  if (fd > stc_vector_capacity(loop->ios)) {
+    stc_vector_resize(loop->ios,fd);
   }
-  e_io_t *io = *io_array_get(&loop->ios, fd);
+  e_io_t *io = stc_vector_get_of_io(loop->ios, fd);
   if (io == NULL) {
     EVENT_ALLOC_SIZEOF(io);
     e_io_init(io);
     io->event_type = EVENT_TYPE_IO;
     io->loop = loop;
     io->fd = fd;
-    io_array_set(&loop->ios,fd,io);
+    stc_vector_set(loop->ios,fd,io);
   }
   if (!io->ready) {
     e_io_ready(io);
