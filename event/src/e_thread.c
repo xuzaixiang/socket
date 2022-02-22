@@ -23,6 +23,7 @@ long e_get_tid() {
   return (long)syscall(SYS_gettid);
 #else
   // pthread_t是POSIX定义的线程id，并不是实际系统内核的线程ID
+  // 进程内唯一，不同进程不唯一
   return (long)pthread_self();
 #endif
 }

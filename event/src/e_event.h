@@ -43,7 +43,6 @@
 #endif
 
 #define EVENT_IO_ARRAY_INIT_SIZE 1024
-// EVENT_ARRAY_DECL(e_io_t *, io_array)
 STC_VECTOR(e_io_t *, io)
 
 #define EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE 16

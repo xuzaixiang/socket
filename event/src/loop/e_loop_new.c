@@ -18,18 +18,18 @@ static int e_loop_init(e_loop_t *loop) {
   loop->pid = e_get_pid();
   loop->tid = e_get_tid();
 
-  // ios
+  /// ios
   loop->ios = stc_vector_new_of_io(0);
   stc_vector_resize(loop->ios,EVENT_IO_ARRAY_INIT_SIZE);
 
-  // iowatcher
+  /// iowatcher
   e_iowatcher_init(loop);
 
-  // loop status
+  /// loop status
   e_mutex_init(&loop->loop_mutex);
   e_cond_init(&loop->loop_cond);
 
-  // custom event
+  /// create custom event
   e_mutex_init(&loop->custom_events_mutex);
   event_queue_init(&loop->custom_events, EVENT_CUSTOM_EVENT_QUEUE_INIT_SIZE);
   if (e_loop_create_custom_fd(loop) < 0) {
